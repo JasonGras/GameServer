@@ -135,31 +135,43 @@ namespace GameServer
             }
         }
 
-        /// <summary>Sends a player's updated position to all clients.</summary>
-        /// <param name="_player">The player whose position to update.</param>
-        /*public static void PlayerPosition(Player _player)
+        public static void AuthenticationStatus(int _toClient,string _clientToken ,string _returnStatus)
         {
-            using (Packet _packet = new Packet((int)ServerPackets.playerPosition))
+            using (Packet _packet = new Packet((int)ServerPackets.signInStatus))
             {
-                _packet.Write(_player.id);
-                _packet.Write(_player.position);
+                _packet.Write(_returnStatus);
+                _packet.Write(_clientToken);
+                _packet.Write(_toClient);
 
-                SendUDPDataToAll(_packet);
+                SendTCPData(_toClient, _packet);
             }
         }
 
-        /// <summary>Sends a player's updated rotation to all clients except to himself (to avoid overwriting the local player's rotation).</summary>
-        /// <param name="_player">The player whose rotation to update.</param>
-        public static void PlayerRotation(Player _player)
-        {
-            using (Packet _packet = new Packet((int)ServerPackets.playerRotation))
+            /// <summary>Sends a player's updated position to all clients.</summary>
+            /// <param name="_player">The player whose position to update.</param>
+            /*public static void PlayerPosition(Player _player)
             {
-                _packet.Write(_player.id);
-                _packet.Write(_player.rotation);
+                using (Packet _packet = new Packet((int)ServerPackets.playerPosition))
+                {
+                    _packet.Write(_player.id);
+                    _packet.Write(_player.position);
 
-                SendUDPDataToAll(_player.id, _packet);
+                    SendUDPDataToAll(_packet);
+                }
             }
-        }*/
-        #endregion
-    }
+
+            /// <summary>Sends a player's updated rotation to all clients except to himself (to avoid overwriting the local player's rotation).</summary>
+            /// <param name="_player">The player whose rotation to update.</param>
+            public static void PlayerRotation(Player _player)
+            {
+                using (Packet _packet = new Packet((int)ServerPackets.playerRotation))
+                {
+                    _packet.Write(_player.id);
+                    _packet.Write(_player.rotation);
+
+                    SendUDPDataToAll(_player.id, _packet);
+                }
+            }*/
+            #endregion
+        }
 }

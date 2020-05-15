@@ -12,6 +12,7 @@ namespace GameServer
         public static int dataBufferSize = 4096;
 
         public int id;
+        public string accessToken;
         public Player player;
         public TCP tcp;
         public UDP udp;
@@ -19,6 +20,7 @@ namespace GameServer
         public Client(int _clientId)
         {
             id = _clientId;
+            accessToken = null;
             tcp = new TCP(id);
             udp = new UDP(id);
         }
@@ -229,13 +231,13 @@ namespace GameServer
             }
 
             // Send the new player to all players (including himself)
-            foreach (Client _client in Server.clients.Values)
+            /*foreach (Client _client in Server.clients.Values)
             {
                 if (_client.player != null)
                 {
                     ServerSend.SpawnPlayer(_client.id, player, player.currentScene);
                 }
-            }
+            }*/
         }
 
         public void SwitchScene(string _desiredScene)
@@ -294,7 +296,21 @@ namespace GameServer
             //Console.WriteLine("SignUpToCognito Return :"+_signUpReturn);
            
         }
+        public async void SignInToCognito(string _username, string _password)
+        {
+            await SignInClients.SignInClientToCognito(_username, _password, id);
+            //Console.WriteLine("SignUpToCognito Return :"+_signUpReturn);
 
+        }
+
+        public async void AccessHomepage(string _clientToken)
+        {
+            // Check Token is still valid
+            // Current Scene = Homepage
+            // Ask Client to Load Homepage
+            // Et on confirme au client qu'il peut Switch de Scene
+            ServerSend.SwitchToScene(id, Constants.SCENE_HOMEPAGE, Constants.SCENE_NOSCENE);
+        }
 
 
         /// <summary>Disconnects the client and stops all network traffic.</summary>

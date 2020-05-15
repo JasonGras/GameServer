@@ -18,7 +18,7 @@ namespace GameServer
             {
                 Console.WriteLine($"Player (ID: {_fromClient}) has assumed the wrong client ID ({_clientIdCheck})!");
             }
-            Server.clients[_fromClient].SendIntoGame();
+            //Server.clients[_fromClient].SendIntoGame();
         }
 
         public static void DesiredPlayerScene(int _fromClient, Packet _packet)
@@ -45,6 +45,23 @@ namespace GameServer
             /*SignUpClients Sign = new SignUpClients();
             Sign.*/
             //Server.clients[_fromClient].SwitchScene(_desiredscene);
+        }
+
+        public async static void SignIpClientRequest(int _fromClient, Packet _packet)
+        {
+            int _clientIdCheck = _packet.ReadInt();
+            string _username = _packet.ReadString();
+            string _password = _packet.ReadString();
+
+            Server.clients[_fromClient].SignInToCognito(_username, _password);
+        }
+
+        public async static void AccessHomePageClientRequest(int _fromClient, Packet _packet)
+        {
+            int _clientIdCheck = _packet.ReadInt();
+            string _clientToken = _packet.ReadString();
+
+            Server.clients[_fromClient].AccessHomepage(_clientToken);
         }
 
 

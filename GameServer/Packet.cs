@@ -11,7 +11,8 @@ namespace GameServer
         welcome = 1,
         switchToScene,
         spawnPlayer,
-        signUpStatus
+        signUpStatus,
+        signInStatus
 
         /*
         playerPosition,
@@ -24,7 +25,9 @@ namespace GameServer
     {
         welcomeReceived = 1,        
         switchScene,
-        signUp
+        signUp,
+        signIn,
+        accessHomePage
         //playerMovement,
     }
 

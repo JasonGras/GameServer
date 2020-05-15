@@ -3,12 +3,13 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Text;
 
-//using Amazon;
-//using Amazon.CognitoIdentity;
+
 using Amazon.CognitoIdentityProvider;
-//using Amazon.Extensions.CognitoAuthentication;
 using Amazon.Runtime;
 using Amazon.CognitoIdentityProvider.Model;
+//using Amazon;
+//using Amazon.CognitoIdentity;
+//using Amazon.Extensions.CognitoAuthentication;
 //using System.Linq;
 //using Amazon.Runtime.Internal;
 
@@ -26,7 +27,8 @@ namespace GameServer
             {
                 ClientId = _clientAppId,
                 Username = _username,
-                Password = _password
+                Password = _password,
+                SecretHash = CognitoHashCalculator.GetSecretHash(_username, Constants.CLIENTAPP_ID, Constants.NeokySecret)
             };
 
             List<AttributeType> attributes = new List<AttributeType>()
@@ -57,6 +59,28 @@ namespace GameServer
                 ServerSend.SignUpStatusReturn(_clientID, Constants.ADHESION_KO);
             }
             Console.WriteLine("SignUpClientToCognito : Over.");
+        }
+    }
+
+    public static class CognitoHashCalculator
+    {
+        public static string GetSecretHash(string username, string appClientId, string appSecretKey)
+        {
+            var dataString = username + appClientId;
+
+            var data = Encoding.UTF8.GetBytes(dataString);
+            var key = Encoding.UTF8.GetBytes(appSecretKey);
+
+            return Convert.ToBase64String(HmacSHA256(data, key));
+        }
+
+        public static byte[] HmacSHA256(byte[] data, byte[] key)
+        {
+            using (var shaAlgorithm = new System.Security.Cryptography.HMACSHA256(key))
+            {
+                var result = shaAlgorithm.ComputeHash(data);
+                return result;
+            }
         }
     }
 }

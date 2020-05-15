@@ -26,5 +26,5 @@ C:\Games\tcp-udp-networking-master\GameServer\GameServer\bin\Debug\netcoreapp3.0
 C:\Games\tcp-udp-networking-master\GameServer\GameServer\bin\Debug\netcoreapp3.0\AWSSDK.Core.dll
 C:\Games\tcp-udp-networking-master\GameServer\GameServer\bin\Debug\netcoreapp3.0\AWSSDK.Extensions.CognitoAuthentication.dll
 C:\Games\tcp-udp-networking-master\GameServer\GameServer\bin\Debug\netcoreapp3.0\AWSSDK.SecurityToken.dll
-C:\Games\tcp-udp-networking-master\GameServer\GameServer\obj\Debug\netcoreapp3.0\GameServer.csproj.CoreCompileInputs.cache
 C:\Games\tcp-udp-networking-master\GameServer\GameServer\obj\Debug\netcoreapp3.0\GameServer.csproj.CopyComplete
+C:\Games\tcp-udp-networking-master\GameServer\GameServer\obj\Debug\netcoreapp3.0\GameServer.csproj.CoreCompileInputs.cache

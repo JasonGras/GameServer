@@ -42,6 +42,10 @@
               "target": "Package",
               "version": "[0.9.4, )"
             },
+            "AWSSDK.SecurityToken": {
+              "target": "Package",
+              "version": "[3.3.104.77, )"
+            },
             "System.Numerics.Vectors": {
               "target": "Package",
               "version": "[4.5.0, )"
