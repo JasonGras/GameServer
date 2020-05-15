@@ -217,18 +217,20 @@ namespace GameServer
         public void SendIntoGame()
         {
             player = new Player(id);
+            ServerSend.SpawnPlayer(id, Constants.SCENE_HOMEPAGE, player.oldScene); // player param is useless
+
 
             // Send all players to the new player
-            foreach (Client _client in Server.clients.Values)
-            {
-                if (_client.player != null)
-                {
-                    if (_client.id != id)
-                    {
-                        ServerSend.SpawnPlayer(id, _client.player, player.currentScene);
-                    }
-                }
-            }
+            /* foreach (Client _client in Server.clients.Values)
+             {
+                 if (_client.player != null)
+                 {
+                     if (_client.id != id)
+                     {
+                         ServerSend.SpawnPlayer(id, _client.player, player.currentScene);
+                     }
+                 }
+             }*/
 
             // Send the new player to all players (including himself)
             /*foreach (Client _client in Server.clients.Values)
@@ -242,7 +244,7 @@ namespace GameServer
 
         public void SwitchScene(string _desiredScene)
         {
-
+            /*
             string _oldScene = Server.clients[id].player.currentScene;
 
             //L'objectif de ce IF est de s'assurer que le client soit sur NOSCENE et qu'il ne peut accèder qu'aux pages désignes
@@ -275,7 +277,7 @@ namespace GameServer
                 {
                     ActualiseScene(_desiredScene, _oldScene);
                 }
-            }
+            }*/
         }
 
         private void ActualiseScene(string _desiredScene, string _oldScene)
@@ -299,6 +301,7 @@ namespace GameServer
         public async void SignInToCognito(string _username, string _password)
         {
             await SignInClients.SignInClientToCognito(_username, _password, id);
+            SendIntoGame();
             //Console.WriteLine("SignUpToCognito Return :"+_signUpReturn);
 
         }

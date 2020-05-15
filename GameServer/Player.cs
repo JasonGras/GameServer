@@ -25,7 +25,7 @@ namespace GameServer
             //username = _username;
             //position = _spawnPosition;
             //rotation = Quaternion.Identity;
-            oldScene = Constants.SCENE_NOSCENE;
+            oldScene = Constants.SCENE_AUTHENTICATION;
             currentScene = Constants.SCENE_NOSCENE;
 
             //inputs = new bool[4];

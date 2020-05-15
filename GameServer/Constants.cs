@@ -19,7 +19,7 @@ namespace GameServer
 
         public const string SCENE_NOSCENE = "NOSCENE"; 
         public const string SCENE_HOMEPAGE = "HomePage"; 
-        public const string SCENE_COLLECTION = "CollectionPage";
+        public const string SCENE_AUTHENTICATION = "Authentication";
 
 
         /*Constants Statut*/

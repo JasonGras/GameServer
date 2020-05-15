@@ -46,6 +46,7 @@ namespace GameServer
             //Server.clients[_clientid].accessToken = authFlowResponse.AuthenticationResult.AccessToken; // Only Loged In Users have their Access Token Set.
             //Console.WriteLine("GetUserAttribute Seems Ok | Token Set : "+ user.SessionTokens.RefreshToken);
             ServerSend.AuthenticationStatus(_clientid, user.SessionTokens.RefreshToken, Constants.AUTHENTICATION_OK);
+            
             //REnvoyer au client son Token.
 
 
