@@ -21,6 +21,7 @@ namespace GameServer
         public const string SCENE_SAMESCENE = "SAMESCENE"; 
         public const string SCENE_HOMEPAGE = "HomePage"; 
         public const string SCENE_AUTHENTICATION = "Authentication";
+        public const string SCENE_COLLECTION = "CollectionPage";
 
 
         /*Constants Statut*/

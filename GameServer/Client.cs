@@ -224,8 +224,9 @@ namespace GameServer
         {
             if (myUser.SessionTokens.IsValid())
             {
-                player = new Player(id);
-                ServerSend.SpawnPlayer(id, Constants.SCENE_HOMEPAGE, player.oldScene); // player param is useless
+                player = new Player(id);                
+
+                ServerSend.SpawnPlayer(id, player.currentScene, player.oldScene); // player param is useless
             }
             
 
@@ -260,7 +261,7 @@ namespace GameServer
             //L'objectif de ce IF est de s'assurer que le client soit sur NOSCENE et qu'il ne peut accèder qu'aux pages désignes
             // Homepage && Collection
 
-            if(_desiredScene == Server.clients[id].player.currentScene)
+            /*if(_desiredScene == Server.clients[id].player.currentScene)
             {
                 ActualiseScene(_desiredScene, Constants.SCENE_SAMESCENE);
                 Console.WriteLine("SAMESCENE | Current Scene : " + Server.clients[id].player.currentScene + " | Old Scene : " + Server.clients[id].player.oldScene);
@@ -269,20 +270,24 @@ namespace GameServer
             {
                 ActualiseScene(_desiredScene, Server.clients[id].player.currentScene);
                 Console.WriteLine("NO SAMESCENE |Current Scene : " + Server.clients[id].player.currentScene + " | Old Scene : " + Server.clients[id].player.oldScene);
+            }*/
+
+            /* if (Server.clients[id].player.currentScene == Constants.SCENE_NOSCENE) // Sur la HomePage
+             {               
+                 if (_desiredScene == Constants.SCENE_COLLECTION) // is Collection Scene
+                 {
+                     ActualiseScene(_desiredScene, Constants.SCENE_NOSCENE);
+                 }
+                 if (_desiredScene == Constants.SCENE_HOMEPAGE) // is Home Scene
+                 {
+                     ActualiseScene(_desiredScene, Constants.SCENE_NOSCENE);
+                 }
+             } */
+            if (_desiredScene == Server.clients[id].player.currentScene || Constants.SCENE_NOSCENE == Server.clients[id].player.currentScene)
+            {
+                ActualiseScene(_desiredScene, Constants.SCENE_SAMESCENE);
+                Console.WriteLine("SAMESCENE | Current Scene : " + Server.clients[id].player.currentScene + " | Old Scene : " + Server.clients[id].player.oldScene);
             }
-
-            /*if (Server.clients[id].player.currentScene == Constants.SCENE_NOSCENE)
-            {               
-                if (_desiredScene == Constants.SCENE_COLLECTION) // is Collection Scene
-                {
-                    ActualiseScene(_desiredScene, Constants.SCENE_NOSCENE);
-                }
-                if (_desiredScene == Constants.SCENE_HOMEPAGE) // is Home Scene
-                {
-                    ActualiseScene(_desiredScene, Constants.SCENE_NOSCENE);
-                }
-            }       
-
             // Si le client est sur la homePage 
             if (Server.clients[id].player.currentScene == Constants.SCENE_HOMEPAGE)
             {
@@ -290,6 +295,7 @@ namespace GameServer
                 if(_desiredScene == Constants.SCENE_COLLECTION)
                 {
                     ActualiseScene(_desiredScene, _oldScene);
+                    Console.WriteLine("Home => Coll | Current Scene : " + Server.clients[id].player.currentScene + " | Old Scene : " + Server.clients[id].player.oldScene);
                 }                
             }
             if (Server.clients[id].player.currentScene == Constants.SCENE_COLLECTION)
@@ -298,8 +304,9 @@ namespace GameServer
                 if (_desiredScene == Constants.SCENE_HOMEPAGE)
                 {
                     ActualiseScene(_desiredScene, _oldScene);
+                    Console.WriteLine("Coll => Home | Current Scene : " + Server.clients[id].player.currentScene + " | Old Scene : " + Server.clients[id].player.oldScene);
                 }
-            }*/
+            }
         }
 
         private void ActualiseScene(string _desiredScene, string _oldScene)
