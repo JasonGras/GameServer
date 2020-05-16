@@ -5,6 +5,11 @@ using System.Net;
 using System.Net.Sockets;
 using System.Numerics;
 
+using Amazon.Extensions.CognitoAuthentication;
+using Amazon.CognitoIdentityProvider;
+using Amazon.Runtime;
+using System.Threading.Tasks;
+
 namespace GameServer
 {
     class Client
@@ -12,7 +17,8 @@ namespace GameServer
         public static int dataBufferSize = 4096;
 
         public int id;
-        public string accessToken;
+        public CognitoUser myUser;
+        public UserSession currentUserSession;
         public Player player;
         public TCP tcp;
         public UDP udp;
@@ -20,7 +26,7 @@ namespace GameServer
         public Client(int _clientId)
         {
             id = _clientId;
-            accessToken = null;
+            //accessToken = null;
             tcp = new TCP(id);
             udp = new UDP(id);
         }
@@ -216,8 +222,12 @@ namespace GameServer
         /// <param name="_playerName">The username of the new player.</param>
         public void SendIntoGame()
         {
-            player = new Player(id);
-            ServerSend.SpawnPlayer(id, Constants.SCENE_HOMEPAGE, player.oldScene); // player param is useless
+            if (myUser.SessionTokens.IsValid())
+            {
+                player = new Player(id);
+                ServerSend.SpawnPlayer(id, Constants.SCENE_HOMEPAGE, player.oldScene); // player param is useless
+            }
+            
 
 
             // Send all players to the new player
@@ -244,12 +254,24 @@ namespace GameServer
 
         public void SwitchScene(string _desiredScene)
         {
-            /*
+            
             string _oldScene = Server.clients[id].player.currentScene;
 
             //L'objectif de ce IF est de s'assurer que le client soit sur NOSCENE et qu'il ne peut accèder qu'aux pages désignes
             // Homepage && Collection
-            if (Server.clients[id].player.currentScene == Constants.SCENE_NOSCENE)
+
+            if(_desiredScene == Server.clients[id].player.currentScene)
+            {
+                ActualiseScene(_desiredScene, Constants.SCENE_SAMESCENE);
+                Console.WriteLine("SAMESCENE | Current Scene : " + Server.clients[id].player.currentScene + " | Old Scene : " + Server.clients[id].player.oldScene);
+            }
+            else
+            {
+                ActualiseScene(_desiredScene, Server.clients[id].player.currentScene);
+                Console.WriteLine("NO SAMESCENE |Current Scene : " + Server.clients[id].player.currentScene + " | Old Scene : " + Server.clients[id].player.oldScene);
+            }
+
+            /*if (Server.clients[id].player.currentScene == Constants.SCENE_NOSCENE)
             {               
                 if (_desiredScene == Constants.SCENE_COLLECTION) // is Collection Scene
                 {
@@ -294,15 +316,58 @@ namespace GameServer
 
         public async void SignUptoCognito(string _username, string _password, string _email, string _clientAppId)
         {
-            await SignUpClients.SignUpClientToCognito(id,_username, _password, _email, _clientAppId);
+            // If the REgEx Formats are Respected, we proceed to Adhesion OR We Return an Error Format
+            if (SecurityCheck.CheckUserPattern(_username))
+            {
+                if (SecurityCheck.CheckPasswordPattern(_password))
+                {
+                    if (SecurityCheck.CheckEmailPattern(_email))
+                    {
+                        await SignUpClients.SignUpClientToCognito(id, _username, _password, _email, _clientAppId);
+                    }
+                    else
+                    {
+                        ServerSend.SignUpStatusReturn(id, Constants.ADHESION_FORMAT_EMAIL_KO);
+                    }
+                }
+                else
+                {
+                    ServerSend.SignUpStatusReturn(id, Constants.ADHESION_FORMAT_PASSWORD_KO);
+                }
+            }
+            else
+            {
+                ServerSend.SignUpStatusReturn(id, Constants.ADHESION_FORMAT_USERNAME_KO);
+            }
+
+
             //Console.WriteLine("SignUpToCognito Return :"+_signUpReturn);
-           
+
         }
         public async void SignInToCognito(string _username, string _password)
         {
-            await SignInClients.SignInClientToCognito(_username, _password, id);
-            SendIntoGame();
+            
             //Console.WriteLine("SignUpToCognito Return :"+_signUpReturn);
+            if (SecurityCheck.CheckUserPattern(_username))
+            {
+                if (SecurityCheck.CheckPasswordPattern(_password))
+                {
+                    // This will SET a UserCognito with Valid Tokens on my Client.
+                    // And send the tokens to the Client who has Sign In
+                    await SignInClients.SignInClientToCognito(_username, _password, id);
+                    SendIntoGame();
+
+
+                }
+                else
+                {
+                    ServerSend.AuthenticationStatus(id,Constants.AUTHENTIFICATION_FORMAT_PASSWORD_KO);
+                }
+            }
+            else
+            {
+                ServerSend.AuthenticationStatus(id,Constants.AUTHENTIFICATION_FORMAT_USERNAME_KO);
+            }
 
         }
 
@@ -315,6 +380,24 @@ namespace GameServer
             ServerSend.SwitchToScene(id, Constants.SCENE_HOMEPAGE, Constants.SCENE_NOSCENE);
         }
 
+        public async Task GetNewValidTokensAsync()
+        {
+
+            //var CompareTokens = Server.clients[id].myUser.SessionTokens.IdToken;
+            Server.clients[id].myUser.SessionTokens = new CognitoUserSession(null, null, Server.clients[id].myUser.SessionTokens.RefreshToken, DateTime.Now, DateTime.Now.AddHours(1));
+
+            InitiateRefreshTokenAuthRequest refreshRequest = new InitiateRefreshTokenAuthRequest()
+            {
+                AuthFlowType = AuthFlowType.REFRESH_TOKEN_AUTH
+            };
+
+            AuthFlowResponse authResponse = await Server.clients[id].myUser.StartWithRefreshTokenAuthAsync(refreshRequest).ConfigureAwait(false);
+            UserSession refreshedUserSession = new UserSession(Server.clients[id].myUser.SessionTokens.AccessToken, Server.clients[id].myUser.SessionTokens.IdToken, Server.clients[id].myUser.SessionTokens.RefreshToken);
+            ServerSend.SendTokens(id, refreshedUserSession);
+            //authResponse.AuthenticationResult.
+            //CompareTokens += " | " + Server.clients[id].myUser.SessionTokens.IdToken;
+            //Console.WriteLine(CompareTokens);
+        }
 
         /// <summary>Disconnects the client and stops all network traffic.</summary>
         private void Disconnect()

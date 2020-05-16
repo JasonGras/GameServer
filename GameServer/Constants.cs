@@ -18,17 +18,38 @@ namespace GameServer
         public static RegionEndpoint REGION = RegionEndpoint.EUWest2;
 
         public const string SCENE_NOSCENE = "NOSCENE"; 
+        public const string SCENE_SAMESCENE = "SAMESCENE"; 
         public const string SCENE_HOMEPAGE = "HomePage"; 
         public const string SCENE_AUTHENTICATION = "Authentication";
 
 
         /*Constants Statut*/
 
-        // Adhesion
-        public const string ADHESION_OK = "ADHESION_OK";
-        public const string ADHESION_KO = "ADHESION_KO";
-        public const string AUTHENTICATION_OK = "AUTHENTICATION_OK";
-        public const string AUTHENTICATION_KO = "AUTHENTICATION_KO";
+        // Security Check
+            // Adhesion
+            public const string ADHESION_FORMAT_EMAIL_KO = "ADHESION_FORMAT_EMAIL_KO";
+            public const string ADHESION_FORMAT_USERNAME_KO = "ADHESION_FORMAT_USERNAME_KO";
+            public const string ADHESION_FORMAT_PASSWORD_KO = "ADHESION_FORMAT_PASSWORD_KO";
+
+            // Authentification
+            public const string AUTHENTIFICATION_FORMAT_USERNAME_KO = "AUTHENTIFICATION_FORMAT_USERNAME_KO";
+            public const string AUTHENTIFICATION_FORMAT_PASSWORD_KO = "AUTHENTIFICATION_FORMAT_PASSWORD_KO";
+       
+
+        // Status
+            // Adhesion
+            public const string ADHESION_OK = "ADHESION_OK";
+            public const string ADHESION_KO = "ADHESION_KO";
+
+            // Authentification
+            public const string AUTHENTICATION_OK = "AUTHENTICATION_OK";
+            public const string AUTHENTICATION_KO = "AUTHENTICATION_KO";
+
+
+        /* TOKENS */
+        public const string REFRESH_TOKEN = "REFRESH_TOKEN";
+        public const string ID_TOKEN = "ID_TOKEN";
+        public const string ACCESS_TOKEN = "ACCESS_TOKEN";
 
     }
 }

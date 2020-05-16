@@ -1,7 +1,9 @@
-﻿using System;
+﻿using Amazon.Extensions.CognitoAuthentication;
+using System;
 using System.Collections.Generic;
 using System.Numerics;
 using System.Text;
+
 
 namespace GameServer
 {
@@ -12,7 +14,8 @@ namespace GameServer
         switchToScene,
         spawnPlayer,
         signUpStatus,
-        signInStatus
+        signInStatus,
+        signInToken
 
         /*
         playerPosition,
@@ -179,6 +182,14 @@ namespace GameServer
             Write(_value.X);
             Write(_value.Y);
             Write(_value.Z);
+        }
+        /// <summary>Adds a Vector3 to the packet.</summary>
+        /// <param name="_value">The Vector3 to add.</param>
+        public void Write(UserSession _value)
+        {
+            Write(_value.Access_Token);
+            Write(_value.Id_Token);
+            Write(_value.Refresh_Token);
         }
         /// <summary>Adds a Quaternion to the packet.</summary>
         /// <param name="_value">The Quaternion to add.</param>
@@ -366,6 +377,11 @@ namespace GameServer
         public Vector3 ReadVector3(bool _moveReadPos = true)
         {
             return new Vector3(ReadFloat(_moveReadPos), ReadFloat(_moveReadPos), ReadFloat(_moveReadPos));
+        }
+
+        public UserSession ReadUserSession(bool _moveReadPos = true)
+        {
+            return new UserSession(ReadString(_moveReadPos), ReadString(_moveReadPos), ReadString(_moveReadPos));// ReadFloat(_moveReadPos), ReadFloat(_moveReadPos), ReadFloat(_moveReadPos)
         }
 
         /// <summary>Reads a Quaternion from the packet.</summary>

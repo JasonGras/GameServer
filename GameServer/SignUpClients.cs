@@ -9,7 +9,7 @@ using Amazon.Runtime;
 using Amazon.CognitoIdentityProvider.Model;
 //using Amazon;
 //using Amazon.CognitoIdentity;
-//using Amazon.Extensions.CognitoAuthentication;
+using Amazon.Extensions.CognitoAuthentication;
 //using System.Linq;
 //using Amazon.Runtime.Internal;
 
@@ -22,6 +22,8 @@ namespace GameServer
         {
             AmazonCognitoIdentityProviderClient provider =
         new AmazonCognitoIdentityProviderClient(new AnonymousAWSCredentials(), Constants.REGION);
+
+            //string SECRET_HASH = CognitoHashCalculator.GetSecretHash(_username, Constants.CLIENTAPP_ID, Constants.NeokySecret);
 
             SignUpRequest signUpRequest = new SignUpRequest()
             {
@@ -48,6 +50,7 @@ namespace GameServer
                 if (result.HttpStatusCode == System.Net.HttpStatusCode.OK)
                 {
                     Console.WriteLine("SignUpClientToCognito : Creation de Compte Finalisée.");
+                    //Server.clients[_clientID].myUser = user;
                     ServerSend.SignUpStatusReturn(_clientID,Constants.ADHESION_OK);
                     // Retourner le Statut Adhesion_OK
                 }

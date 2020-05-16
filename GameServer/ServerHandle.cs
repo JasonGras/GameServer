@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Amazon.Extensions.CognitoAuthentication;
+using Amazon.SecurityToken.Model;
+using System;
 using System.Collections.Generic;
 using System.Numerics;
 using System.Text;
@@ -25,11 +27,31 @@ namespace GameServer
         {
             // Getting the parameter from Client Packet
             int _clientIdCheck = _packet.ReadInt();
+            UserSession _currentUserSession = _packet.ReadUserSession();
             string _desiredscene = _packet.ReadString();
 
+            if (_fromClient == _clientIdCheck)
+            {
+                Console.WriteLine($"{Server.clients[_fromClient].tcp.socket.Client.RemoteEndPoint} want to switch to {_desiredscene}.");
+            
+                // Update Session From Client
+                Server.clients[_fromClient].myUser.SessionTokens.IdToken = _currentUserSession.Id_Token;
+                Server.clients[_fromClient].myUser.SessionTokens.AccessToken = _currentUserSession.Access_Token;
+                Server.clients[_fromClient].myUser.SessionTokens.RefreshToken = _currentUserSession.Refresh_Token;
 
-            Console.WriteLine($"{Server.clients[_fromClient].tcp.socket.Client.RemoteEndPoint} want to switch to {_desiredscene}.");
-            Server.clients[_fromClient].SwitchScene(_desiredscene);
+                //Check if Session is Still Valid
+                if (!Server.clients[_fromClient].myUser.SessionTokens.IsValid())
+                {
+                    _ = Server.clients[_fromClient].GetNewValidTokensAsync();
+                    Console.WriteLine("UserSession Updated.");
+                }
+                //Server.clients[_fromClient].myUser.StartWithRefreshTokenAuthAsync();
+                // For Valid Sessions, we can go to the desired Scene
+                if (Server.clients[_fromClient].myUser.SessionTokens.IsValid())
+                {
+                    Server.clients[_fromClient].SwitchScene(_desiredscene);
+                }
+            }
         }
 
         public async static void SignUpClientRequest(int _fromClient, Packet _packet)

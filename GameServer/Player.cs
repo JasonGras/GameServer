@@ -9,6 +9,7 @@ namespace GameServer
     {
         public int id;
         public string username;
+        //public string ariane;
 
         //public Vector3 position;
         //public Quaternion rotation;
@@ -27,6 +28,7 @@ namespace GameServer
             //rotation = Quaternion.Identity;
             oldScene = Constants.SCENE_AUTHENTICATION;
             currentScene = Constants.SCENE_NOSCENE;
+            //ariane = 
 
             //inputs = new bool[4];
         }

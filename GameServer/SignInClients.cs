@@ -16,13 +16,14 @@ namespace GameServer
         public static async Task SignInClientToCognito(string _username, string _password, int _clientid)
         {
             AmazonCognitoIdentityProviderClient provider =
-                new AmazonCognitoIdentityProviderClient(new AnonymousAWSCredentials(), Constants.REGION);
+        new AmazonCognitoIdentityProviderClient(new AnonymousAWSCredentials(), Constants.REGION);
 
             //string SECRET_HASH = CognitoHashCalculator.GetSecretHash(_username, Constants.CLIENTAPP_ID, Constants.NeokySecret);
 
             CognitoUserPool userPool = new CognitoUserPool(Constants.POOL_ID, Constants.CLIENTAPP_ID, provider, Constants.NeokySecret);
 
-            CognitoUser user = new CognitoUser(_username, Constants.CLIENTAPP_ID, userPool, provider, Constants.NeokySecret);            
+            CognitoUser user = new CognitoUser(_username, Constants.CLIENTAPP_ID, userPool, provider, Constants.NeokySecret);
+            //CognitoUser user = Server.clients[_clientid].myUser;
 
             InitiateSrpAuthRequest authRequest = new InitiateSrpAuthRequest()
             {
@@ -30,6 +31,7 @@ namespace GameServer
             };
 
             AuthFlowResponse authFlowResponse = null;
+            //Console.WriteLine("GetUserAttribute | Pré - isValid : " + user.SessionTokens.IsValid().ToString()); // = Null while SRPAUTH not run
             try
             {
                 Console.WriteLine("Login Lunch");
@@ -38,18 +40,21 @@ namespace GameServer
             catch (Exception e)
             {
                 Console.WriteLine("Login Failed : " + e);
-                ServerSend.AuthenticationStatus(_clientid, null, Constants.AUTHENTICATION_KO);
+                ServerSend.AuthenticationStatus(_clientid, Constants.AUTHENTICATION_KO);
                 // Signaler au client que son authentification a Echoué pour X ou Y Raison
-            }           
-           
+            }
+
             //authFlowResponse.AuthenticationResult.RefreshToken
             //Server.clients[_clientid].accessToken = authFlowResponse.AuthenticationResult.AccessToken; // Only Loged In Users have their Access Token Set.
-            //Console.WriteLine("GetUserAttribute Seems Ok | Token Set : "+ user.SessionTokens.RefreshToken);
-            ServerSend.AuthenticationStatus(_clientid, user.SessionTokens.RefreshToken, Constants.AUTHENTICATION_OK);
+            Console.WriteLine("GetUserAttribute | Post - isValid : "+ user.SessionTokens.IsValid().ToString());
+            Server.clients[_clientid].myUser = user;
+
+            UserSession uSession = new UserSession(null, null, null);
+            uSession.Access_Token = user.SessionTokens.AccessToken;
+            uSession.Refresh_Token = user.SessionTokens.RefreshToken;
+            uSession.Id_Token = user.SessionTokens.IdToken;
+            ServerSend.SendTokens(_clientid, uSession);
             
-            //REnvoyer au client son Token.
-
-
 
         }
     }
