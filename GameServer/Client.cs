@@ -224,9 +224,11 @@ namespace GameServer
         {
             if (myUser.SessionTokens.IsValid())
             {
-                player = new Player(id);                
+                //Get Player Data From Database
 
-                ServerSend.SpawnPlayer(id, player.currentScene, player.oldScene); // player param is useless
+                player = new Player(id, "Oxdan", 10, 850, 900); // En dur en attendant les request DB                
+
+                ServerSend.SpawnPlayer(id,player); // player param is useless
             }
             
 
@@ -362,9 +364,6 @@ namespace GameServer
                     // This will SET a UserCognito with Valid Tokens on my Client.
                     // And send the tokens to the Client who has Sign In
                     await SignInClients.SignInClientToCognito(_username, _password, id);
-                    SendIntoGame();
-
-
                 }
                 else
                 {

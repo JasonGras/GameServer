@@ -94,14 +94,17 @@ namespace GameServer
         /// <summary>Tells a client to spawn a player.</summary>
         /// <param name="_toClient">The client that should spawn the player.</param>
         /// <param name="_player">The player to spawn.</param>
-        public static void SpawnPlayer(int _toClient,string _startScene, string _oldScene)
+        public static void SpawnPlayer(int _toClient,Player _player)
         {
             using (Packet _packet = new Packet((int)ServerPackets.spawnPlayer))
             {
                 _packet.Write(_toClient);
-                //_packet.Write(_player.username);
-                _packet.Write(_startScene);
-                _packet.Write(_oldScene);
+                _packet.Write(_player.username);
+                _packet.Write(_player.level);
+                _packet.Write(_player.levelxp);
+                _packet.Write(_player.requiredLvlUpXp);
+                _packet.Write(_player.currentScene);
+                _packet.Write(_player.oldScene);
                 //_packet.Write(_player.rotation);
 
                 SendTCPData(_toClient, _packet);

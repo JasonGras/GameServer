@@ -61,7 +61,11 @@ namespace GameServer
             string _username = _packet.ReadString();
             string _password = _packet.ReadString();
             string _email = _packet.ReadString();
-            Server.clients[_fromClient].SignUptoCognito(_username, _password, _email, Constants.CLIENTAPP_ID);
+
+            if (_fromClient == _clientIdCheck)
+            {
+                Server.clients[_fromClient].SignUptoCognito(_username, _password, _email, Constants.CLIENTAPP_ID);
+            }
             //string _signUpReturn = await SignUpClients.SignUpClientToCognito(_username, _password, _email, Constants.CLIENTAPP_ID);
             //Console.WriteLine($"{Server.clients[_fromClient].tcp.socket.Client.RemoteEndPoint} want to switch to {_desiredscene}.");
             /*SignUpClients Sign = new SignUpClients();
@@ -75,7 +79,10 @@ namespace GameServer
             string _username = _packet.ReadString();
             string _password = _packet.ReadString();
 
-            Server.clients[_fromClient].SignInToCognito(_username, _password);
+            if (_fromClient == _clientIdCheck)
+            {
+                Server.clients[_fromClient].SignInToCognito(_username, _password);
+            }
         }
 
         public async static void AccessHomePageClientRequest(int _fromClient, Packet _packet)
@@ -83,7 +90,10 @@ namespace GameServer
             int _clientIdCheck = _packet.ReadInt();
             string _clientToken = _packet.ReadString();
 
-            Server.clients[_fromClient].AccessHomepage(_clientToken);
+            if (_fromClient == _clientIdCheck)
+            {
+                Server.clients[_fromClient].AccessHomepage(_clientToken);
+            }
         }
 
 

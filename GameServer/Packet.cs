@@ -366,9 +366,11 @@ namespace GameServer
                 }
                 return _value; // Return the string
             }
-            catch
+            catch (Exception e)
             {
-                throw new Exception("Could not read value of type 'string'!");
+                throw new Exception("Could not read value of type 'bool'!");
+                //Console.WriteLine("Could not read value of type 'string'!");
+                 //return "READ_STRING_KO";
             }
         }
 

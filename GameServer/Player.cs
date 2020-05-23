@@ -9,6 +9,9 @@ namespace GameServer
     {
         public int id;
         public string username;
+        public float level;
+        public float levelxp;
+        public float requiredLvlUpXp;
         //public string ariane;
 
         //public Vector3 position;
@@ -20,10 +23,13 @@ namespace GameServer
         public string currentScene;
         public string oldScene;
 
-        public Player(int _id)
-        {
+        public Player(int _id, string _username, float _level, float _levelxp, float _requiredLvlUpXp)
+        { 
             id = _id;
-            //username = _username;
+            username = _username;
+            level = _level;
+            levelxp = _levelxp;
+            requiredLvlUpXp = _requiredLvlUpXp;
             //position = _spawnPosition;
             //rotation = Quaternion.Identity;
             oldScene = Constants.SCENE_AUTHENTICATION;

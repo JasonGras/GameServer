@@ -45,6 +45,7 @@ namespace GameServer
             // Authentification
             public const string AUTHENTICATION_OK = "AUTHENTICATION_OK";
             public const string AUTHENTICATION_KO = "AUTHENTICATION_KO";
+            public const string AUTHENTICATION_USER_CONFIRMED_KO = "AUTHENTICATION_USER_CONFIRMED_KO";
 
 
         /* TOKENS */
