@@ -10,12 +10,18 @@ namespace GameServer
     {
         public const int TICKS_PER_SEC = 30; // How many ticks per second
         public const float MS_PER_TICK = 1000f / TICKS_PER_SEC; // How many milliseconds per tick
-        public const string NeokySecret = "48h4sa5vvsficajh9ggc5urh5l0e5httn59fijl261t2kj0len0";
 
+        /*Cognito*/
+        public const string NeokySecret = "48h4sa5vvsficajh9ggc5urh5l0e5httn59fijl261t2kj0len0";
         public const string POOL_ID = "eu-west-2_htPUpskO5";
         public const string CLIENTAPP_ID = "13d9pfoekgd1om3o12gh33nl4k";
         public const string FED_POOL_ID = "eu-west-2:1685b7b4-a171-492b-ad7c-62527ccd80d1";
         public static RegionEndpoint REGION = RegionEndpoint.EUWest2;
+
+        /*DynamoDB*/
+        public const string AWS_ACCESS_KEY_ID = "AKIAR2N5ASA27LTY5YPC";
+        public const string AWS_SECRET_ACCESS_KEY= "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";
+        public const string AWS_DYNAMO_SERVICE_URL= "https://dynamodb.eu-west-2.amazonaws.com";
 
         public const string SCENE_NOSCENE = "NOSCENE"; 
         public const string SCENE_SAMESCENE = "SAMESCENE"; 

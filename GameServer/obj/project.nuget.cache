@@ -1,12 +1,13 @@
 {
   "version": 2,
-  "dgSpecHash": "ZOBwkj2WNuwR3P8vjS3CzB33e7s6NSyBPzNr1QNjZWgUCSQMvFrXsTK6Vspod8BiKeNRbjzPiL9N/0MmWV+DKg==",
+  "dgSpecHash": "g9j+KOPpOQfOxOtHgzkOrAlEtT3ig69eY73mY+7p+OIcfN4co3YaKHhXaN5x9thtRP+CIbjVQxpY6GzTjln9mg==",
   "success": true,
   "projectFilePath": "C:\\Games\\tcp-udp-networking-master\\GameServer\\GameServer\\GameServer.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\Jas\\.nuget\\packages\\awssdk.cognitoidentity\\3.3.2.14\\awssdk.cognitoidentity.3.3.2.14.nupkg.sha512",
     "C:\\Users\\Jas\\.nuget\\packages\\awssdk.cognitoidentityprovider\\3.3.4.3\\awssdk.cognitoidentityprovider.3.3.4.3.nupkg.sha512",
-    "C:\\Users\\Jas\\.nuget\\packages\\awssdk.core\\3.3.106.23\\awssdk.core.3.3.106.23.nupkg.sha512",
+    "C:\\Users\\Jas\\.nuget\\packages\\awssdk.core\\3.3.107.1\\awssdk.core.3.3.107.1.nupkg.sha512",
+    "C:\\Users\\Jas\\.nuget\\packages\\awssdk.dynamodbv2\\3.3.106.9\\awssdk.dynamodbv2.3.3.106.9.nupkg.sha512",
     "C:\\Users\\Jas\\.nuget\\packages\\awssdk.extensions.cognitoauthentication\\0.9.4\\awssdk.extensions.cognitoauthentication.0.9.4.nupkg.sha512",
     "C:\\Users\\Jas\\.nuget\\packages\\awssdk.securitytoken\\3.3.104.77\\awssdk.securitytoken.3.3.104.77.nupkg.sha512",
     "C:\\Users\\Jas\\.nuget\\packages\\microsoft.netcore.platforms\\1.0.1\\microsoft.netcore.platforms.1.0.1.nupkg.sha512",

@@ -101,8 +101,8 @@ namespace GameServer
                 _packet.Write(_toClient);
                 _packet.Write(_player.username);
                 _packet.Write(_player.level);
-                _packet.Write(_player.levelxp);
-                _packet.Write(_player.requiredLvlUpXp);
+                _packet.Write(_player.level_xp);
+                _packet.Write(_player.required_levelup_xp);
                 _packet.Write(_player.currentScene);
                 _packet.Write(_player.oldScene);
                 //_packet.Write(_player.rotation);

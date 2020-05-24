@@ -38,6 +38,10 @@
       "frameworks": {
         "netcoreapp3.0": {
           "dependencies": {
+            "AWSSDK.DynamoDBv2": {
+              "target": "Package",
+              "version": "[3.3.106.9, )"
+            },
             "AWSSDK.Extensions.CognitoAuthentication": {
               "target": "Package",
               "version": "[0.9.4, )"

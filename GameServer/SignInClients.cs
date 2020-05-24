@@ -47,7 +47,7 @@ namespace GameServer
                 uSession.Refresh_Token = user.SessionTokens.RefreshToken;
                 uSession.Id_Token = user.SessionTokens.IdToken;
                 ServerSend.SendTokens(_clientid, uSession);
-                Server.clients[_clientid].SendIntoGame();
+                Server.clients[_clientid].SendIntoGame(user.Username);
             }
             catch (Exception e)
             {

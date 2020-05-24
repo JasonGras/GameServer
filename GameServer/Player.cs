@@ -3,33 +3,61 @@ using System.Collections.Generic;
 using System.Text;
 using System.Numerics;
 
+using Amazon.DynamoDBv2.DataModel;
+
 namespace GameServer
 {
-    class Player
+    [DynamoDBTable("clients")]
+    public class Player : IEquatable<Player>
     {
-        public int id;
+        /*public int id;
         public string username;
         public float level;
         public float levelxp;
-        public float requiredLvlUpXp;
-        //public string ariane;
+        public float requiredLvlUpXp;*/
 
-        //public Vector3 position;
-        //public Quaternion rotation;
 
-        //private float moveSpeed = 5f / Constants.TICKS_PER_SEC;
-        //private bool[] inputs;
-        
+        [DynamoDBHashKey]
+        public string client_id { get; set; }
+
+        public string username { get; set; }
+
+        public string email { get; set; }
+
+        public string account_statut { get; set; }
+
+        public string client_sub { get; set; }
+
+        public float level { get; set; }
+
+        public float level_xp { get; set; }
+
+        public float required_levelup_xp { get; set; }
+
         public string currentScene;
         public string oldScene;
 
-        public Player(int _id, string _username, float _level, float _levelxp, float _requiredLvlUpXp)
-        { 
-            id = _id;
+        public Player()
+        {
+            oldScene = Constants.SCENE_AUTHENTICATION;
+            currentScene = Constants.SCENE_HOMEPAGE;
+            // Without i have an error :  System.InvalidOperationException: Type GameServer.Player is unsupported, it cannot be instantiated
+        }
+
+        public Player(string _clientId, string _username, string _email, string _accountStatut, string _clientSub, float _level, float _levelXp)//(int _id, string _username, float _level, float _levelxp, float _requiredLvlUpXp)
+        {
+            client_id = _clientId;
+            username = _username;
+            email = _email;
+            account_statut = _accountStatut;
+            client_sub = _clientSub;
+            level = _level;
+            level_xp = _levelXp;
+            /*id = _id;
             username = _username;
             level = _level;
             levelxp = _levelxp;
-            requiredLvlUpXp = _requiredLvlUpXp;
+            requiredLvlUpXp = _requiredLvlUpXp;*/
             //position = _spawnPosition;
             //rotation = Quaternion.Identity;
             oldScene = Constants.SCENE_AUTHENTICATION;
@@ -38,6 +66,45 @@ namespace GameServer
 
             //inputs = new bool[4];
         }
+
+        public bool Equals(Player other)
+        {
+            if (ReferenceEquals(null, other)) return false;
+            if (ReferenceEquals(this, other)) return true;
+            return client_id == other.client_id
+                && string.Equals(username, other.username)
+                && string.Equals(email, other.email)
+                && string.Equals(account_statut, other.account_statut)
+                && string.Equals(client_sub, other.client_sub)
+                && float.Equals(level, other.level)
+                && float.Equals(level_xp, other.level_xp)
+                && float.Equals(required_levelup_xp, other.required_levelup_xp);
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (ReferenceEquals(null, obj)) return false;
+            if (ReferenceEquals(this, obj)) return true;
+            if (obj.GetType() != this.GetType()) return false;
+            return Equals((Player)obj);
+        }
+
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                var hashCode = client_id != null ? client_id.GetHashCode() : 0;
+                hashCode = (hashCode * 397) ^ (username != null ? username.GetHashCode() : 0);
+                hashCode = (hashCode * 397) ^ (email != null ? email.GetHashCode() : 0);
+                hashCode = (hashCode * 397) ^ (account_statut != null ? account_statut.GetHashCode() : 0);
+                hashCode = (hashCode * 397) ^ (client_sub != null ? client_sub.GetHashCode() : 0);
+                hashCode = (hashCode * 397) ^ (level != 0 ? level.GetHashCode() : 0);
+                hashCode = (hashCode * 397) ^ (level_xp != 0 ? level_xp.GetHashCode() : 0);
+                hashCode = (hashCode * 397) ^ (required_levelup_xp != 0 ? required_levelup_xp.GetHashCode() : 0);
+                return hashCode;
+            }
+        }
+
         /*public Player(int _id, string _username, Vector3 _spawnPosition, string _currentScene)
         {
             id = _id;

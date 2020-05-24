@@ -8,10 +8,12 @@ using System.Numerics;
 using Amazon.Extensions.CognitoAuthentication;
 using Amazon.CognitoIdentityProvider;
 using Amazon.Runtime;
+
 using System.Threading.Tasks;
 
 namespace GameServer
 {
+    
     class Client
     {
         public static int dataBufferSize = 4096;
@@ -22,13 +24,14 @@ namespace GameServer
         public Player player;
         public TCP tcp;
         public UDP udp;
+        public DynamoClient clientDynamoDB;
 
         public Client(int _clientId)
         {
             id = _clientId;
             //accessToken = null;
             tcp = new TCP(id);
-            udp = new UDP(id);
+            udp = new UDP(id);            
         }
 
         public class TCP
@@ -220,15 +223,25 @@ namespace GameServer
 
         /// <summary>Sends the client into the game and informs other clients of the new player.</summary>
         /// <param name="_playerName">The username of the new player.</param>
-        public void SendIntoGame()
+        public void SendIntoGame(string _playerName)
         {
+            
             if (myUser.SessionTokens.IsValid())
             {
-                //Get Player Data From Database
-
-                player = new Player(id, "Oxdan", 10, 850, 900); // En dur en attendant les request DB                
-
-                ServerSend.SpawnPlayer(id,player); // player param is useless
+                try
+                {
+                    clientDynamoDB = new DynamoClient();
+                    //Get Player Data From Database
+                    var task = clientDynamoDB.ScanForNeokyClientsUsingUsername(_playerName);
+                    player = task.Result;
+                    // Get Table XP from DB and find the required Lvl Up from the Lvl
+                    player.required_levelup_xp = player.level * 100;
+                    ServerSend.SpawnPlayer(id, player); // player param is useless
+                }
+                catch(Exception e)
+                {
+                    Console.WriteLine("Client.cs | Client Scan Failed : " + e);
+                }                
             }
             
 

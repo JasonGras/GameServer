@@ -8,6 +8,7 @@
     ".NETCoreApp,Version=v3.0": {
       "GameServer/1.0.0": {
         "dependencies": {
+          "AWSSDK.DynamoDBv2": "3.3.106.9",
           "AWSSDK.Extensions.CognitoAuthentication": "0.9.4",
           "AWSSDK.SecurityToken": "3.3.104.77",
           "System.Numerics.Vectors": "4.5.0"
@@ -18,7 +19,7 @@
       },
       "AWSSDK.CognitoIdentity/3.3.2.14": {
         "dependencies": {
-          "AWSSDK.Core": "3.3.106.23",
+          "AWSSDK.Core": "3.3.107.1",
           "AWSSDK.SecurityToken": "3.3.104.77"
         },
         "runtime": {
@@ -30,7 +31,7 @@
       },
       "AWSSDK.CognitoIdentityProvider/3.3.4.3": {
         "dependencies": {
-          "AWSSDK.Core": "3.3.106.23"
+          "AWSSDK.Core": "3.3.107.1"
         },
         "runtime": {
           "lib/netstandard1.3/AWSSDK.CognitoIdentityProvider.dll": {
@@ -39,11 +40,22 @@
           }
         }
       },
-      "AWSSDK.Core/3.3.106.23": {
+      "AWSSDK.Core/3.3.107.1": {
         "runtime": {
           "lib/netstandard2.0/AWSSDK.Core.dll": {
             "assemblyVersion": "3.3.0.0",
-            "fileVersion": "3.3.106.23"
+            "fileVersion": "3.3.107.1"
+          }
+        }
+      },
+      "AWSSDK.DynamoDBv2/3.3.106.9": {
+        "dependencies": {
+          "AWSSDK.Core": "3.3.107.1"
+        },
+        "runtime": {
+          "lib/netstandard2.0/AWSSDK.DynamoDBv2.dll": {
+            "assemblyVersion": "3.3.0.0",
+            "fileVersion": "3.3.106.9"
           }
         }
       },
@@ -51,7 +63,7 @@
         "dependencies": {
           "AWSSDK.CognitoIdentity": "3.3.2.14",
           "AWSSDK.CognitoIdentityProvider": "3.3.4.3",
-          "AWSSDK.Core": "3.3.106.23",
+          "AWSSDK.Core": "3.3.107.1",
           "System.Collections.NonGeneric": "4.0.1"
         },
         "runtime": {
@@ -63,7 +75,7 @@
       },
       "AWSSDK.SecurityToken/3.3.104.77": {
         "dependencies": {
-          "AWSSDK.Core": "3.3.106.23"
+          "AWSSDK.Core": "3.3.107.1"
         },
         "runtime": {
           "lib/netstandard2.0/AWSSDK.SecurityToken.dll": {
@@ -188,12 +200,19 @@
       "path": "awssdk.cognitoidentityprovider/3.3.4.3",
       "hashPath": "awssdk.cognitoidentityprovider.3.3.4.3.nupkg.sha512"
     },
-    "AWSSDK.Core/3.3.106.23": {
+    "AWSSDK.Core/3.3.107.1": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-ejndpgtTGNPbzQ2PW6iFUqOUMwOv/Bch/yrFlfXGjNF5IjfX2WWAp+fAIqjU/p/NBqY083v3dACo9aL8/ClZmQ==",
-      "path": "awssdk.core/3.3.106.23",
-      "hashPath": "awssdk.core.3.3.106.23.nupkg.sha512"
+      "sha512": "sha512-77cbcs1UikCP9MO1ujsuMe0FJcchzfNMIROvYfCoipmK6ANfPfNxlDxPfMeruoKN5gRpxQG4gH7ltJ2ceZDrdw==",
+      "path": "awssdk.core/3.3.107.1",
+      "hashPath": "awssdk.core.3.3.107.1.nupkg.sha512"
+    },
+    "AWSSDK.DynamoDBv2/3.3.106.9": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-9jdMwQ3Z3FBlzUE0ET+LIU6ZvGp6VygM/FzPeEioKW007nX2DY+z3XRE9ugNy+sbcb0pVM7QCyz9pPafLoa76w==",
+      "path": "awssdk.dynamodbv2/3.3.106.9",
+      "hashPath": "awssdk.dynamodbv2.3.3.106.9.nupkg.sha512"
     },
     "AWSSDK.Extensions.CognitoAuthentication/0.9.4": {
       "type": "package",
