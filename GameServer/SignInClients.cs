@@ -61,7 +61,7 @@ namespace GameServer
             }
             catch (Exception e)
             {
-                HandleExceptions(e, _clientid);
+                HandleExceptions(e, _clientid,Constants.SCENE_AUTHENTICATION);
             }
 
         }
@@ -109,7 +109,7 @@ namespace GameServer
             }
             catch (Exception e)
             {
-                HandleExceptions(e, _clientid);
+                HandleExceptions(e, _clientid,Constants.SCENE_REDEFINE_PWD);
             }
         }
 
@@ -138,14 +138,25 @@ namespace GameServer
             Server.clients[_clientid].SendIntoGame(user.Username, sceneToUnload);
         }
 
-        public static void HandleExceptions(Exception e,int _clientid)
+        public static void HandleExceptions(Exception e,int _clientid,string authenticationScene)
         {
             Console.WriteLine("SignInClients.cs | My User Authentication Failed");
             switch (e.GetType().ToString())
             {
+                case "Amazon.CognitoIdentityProvider.Model.PasswordResetRequiredException":
+                    Console.WriteLine("SignInClients.cs | Exception | Handle Reset Password");// TO DO
+                    break;
                 case "Amazon.CognitoIdentityProvider.Model.NotAuthorizedException":
-                    Console.WriteLine("SignInClients.cs | Exception | Unknown Username or password.");
-                    ServerSend.AuthenticationStatus(_clientid, Constants.AUTHENTICATION_KO);
+                    if(authenticationScene == Constants.SCENE_AUTHENTICATION)
+                    {
+                        Console.WriteLine("SignInClients.cs | Exception | Unknown Username or password.");
+                        ServerSend.AuthenticationStatus(_clientid, Constants.AUTHENTICATION_KO);
+                    }else if (authenticationScene == Constants.SCENE_REDEFINE_PWD)
+                    {
+                        Console.WriteLine("SignInClients.cs | Exception | Unknown Username or password.");
+                        ServerSend.AuthenticationStatus(_clientid, Constants.AUTHENTICATION_REDEFINE_PWD_KO);
+                    }
+                    
                     break;
                 case "Amazon.CognitoIdentityProvider.Model.UserNotConfirmedException":
                     Console.WriteLine("SignInClients.cs | Exception | Need User Email Confirmation.");
