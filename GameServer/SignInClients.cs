@@ -39,6 +39,8 @@ namespace GameServer
 
                 //authFlowResponse.AuthenticationResult.RefreshToken
                 //Server.clients[_clientid].accessToken = authFlowResponse.AuthenticationResult.AccessToken; // Only Loged In Users have their Access Token Set.
+                if(authFlowResponse.ChallengeName != "{NEW_PASSWORD_REQUIRED}")
+                {                
                 Console.WriteLine("GetUserAttribute | Post - isValid : " + user.SessionTokens.IsValid().ToString());
                 Server.clients[_clientid].myUser = user;
 
@@ -48,6 +50,11 @@ namespace GameServer
                 uSession.Id_Token = user.SessionTokens.IdToken;
                 ServerSend.SendTokens(_clientid, uSession);
                 Server.clients[_clientid].SendIntoGame(user.Username);
+                }
+                else
+                {
+                    Console.WriteLine("NEW PASSWORD REQUIRED");
+                }
             }
             catch (Exception e)
             {
@@ -61,6 +68,7 @@ namespace GameServer
                         ServerSend.AuthenticationStatus(_clientid, Constants.AUTHENTICATION_USER_CONFIRMED_KO);                        
                         break;
                     default:
+                        Console.WriteLine(e.GetType().ToString() + " | "+e);
                         ServerSend.AuthenticationStatus(_clientid, Constants.AUTHENTICATION_KO);
                         break;
                 }

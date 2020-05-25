@@ -59,7 +59,16 @@ namespace GameServer
             {
                 // Retourner le Statut Adhesion_KO
                 Console.WriteLine("SignUpClientToCognito | New Exception | Code : " + e.GetType().ToString() + " | Exeption : " + e.Message);
-                ServerSend.SignUpStatusReturn(_clientID, Constants.ADHESION_KO);
+                switch (e.GetType().ToString())
+                {
+                    case "Amazon.CognitoIdentityProvider.Model.UsernameExistsException":
+                        ServerSend.SignUpStatusReturn(_clientID, Constants.ADHESION_ALREADY_EXIST);
+                        break;
+                    default:
+                        ServerSend.SignUpStatusReturn(_clientID, Constants.ADHESION_KO);
+                        break;
+                }
+                
             }
             Console.WriteLine("SignUpClientToCognito : Over.");
         }
