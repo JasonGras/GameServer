@@ -223,7 +223,7 @@ namespace GameServer
 
         /// <summary>Sends the client into the game and informs other clients of the new player.</summary>
         /// <param name="_playerName">The username of the new player.</param>
-        public void SendIntoGame(string _playerName)
+        public void SendIntoGame(string _playerName, string _sceneToUnload)
         {
             
             if (myUser.SessionTokens.IsValid())
@@ -236,6 +236,7 @@ namespace GameServer
                     player = task.Result;
                     // Get Table XP from DB and find the required Lvl Up from the Lvl
                     player.required_levelup_xp = player.level * 100;
+                    player.oldScene = _sceneToUnload;
                     ServerSend.SpawnPlayer(id, player); // player param is useless
                 }
                 catch(Exception e)

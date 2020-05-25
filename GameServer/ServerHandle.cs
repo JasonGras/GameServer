@@ -54,6 +54,20 @@ namespace GameServer
             }
         }
 
+        public async static void GetRedefinedPwd(int _fromClient, Packet _packet)
+        {
+            // Getting the parameter from Client Packet
+            int _clientIdCheck = _packet.ReadInt();
+            string _username = _packet.ReadString();
+            string _currentPwd = _packet.ReadString();
+            string _newPwd = _packet.ReadString();
+
+            if (_fromClient == _clientIdCheck)
+            {
+                await SignInClients.PwdRedefinedAuthentication(_username, _currentPwd, _fromClient, _newPwd);
+            }
+        }
+
         public async static void SignUpClientRequest(int _fromClient, Packet _packet)
         {
             // Getting the parameter from Client Packet

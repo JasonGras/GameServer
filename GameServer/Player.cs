@@ -39,7 +39,7 @@ namespace GameServer
 
         public Player()
         {
-            oldScene = Constants.SCENE_AUTHENTICATION;
+            oldScene = Constants.SCENE_NOSCENE;
             currentScene = Constants.SCENE_HOMEPAGE;
             // Without i have an error :  System.InvalidOperationException: Type GameServer.Player is unsupported, it cannot be instantiated
         }

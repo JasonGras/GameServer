@@ -125,6 +125,18 @@ namespace GameServer
             }
         }
 
+        /// <summary>After Authentication of a player if Challenge is NEW password REquired : Ask client to change his password</summary>
+        public static void ClientNewPasswordRequired(int _toClient, string _msg)
+        {
+            using (Packet _packet = new Packet((int)ServerPackets.redefinePassword)) // Définition du Nouveau Packet
+            {
+                _packet.Write(_msg);
+                _packet.Write(_toClient);
+
+                SendTCPData(_toClient, _packet);
+            }
+        }
+
         /// <summary>Tells a client if he Sign Up Successfully</summary>
         /// <param name="_newScene">The validated Scene to switch to</param>
         public static void SignUpStatusReturn(int _toClient, string _returnStatus)

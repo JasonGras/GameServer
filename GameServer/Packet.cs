@@ -15,7 +15,8 @@ namespace GameServer
         spawnPlayer,
         signUpStatus,
         signInStatus,
-        signInToken
+        signInToken,
+        redefinePassword
 
         /*
         playerPosition,
@@ -25,12 +26,13 @@ namespace GameServer
 
     /// <summary>Sent from client to server.</summary>
     public enum ClientPackets
-    {
+    {   // Attention l'ordre est important !!
         welcomeReceived = 1,        
         switchScene,
         signUp,
         signIn,
-        accessHomePage
+        redefinedPwd,
+        accessHomePage,
         //playerMovement,
     }
 

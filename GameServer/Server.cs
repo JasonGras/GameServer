@@ -134,6 +134,7 @@ namespace GameServer
                 { (int)ClientPackets.signUp, ServerHandle.SignUpClientRequest },
                 { (int)ClientPackets.signIn, ServerHandle.SignIpClientRequest },
                 { (int)ClientPackets.accessHomePage, ServerHandle.AccessHomePageClientRequest },
+                { (int)ClientPackets.redefinedPwd, ServerHandle.GetRedefinedPwd },
                 //{ (int)ClientPackets.playerMovement, ServerHandle.PlayerMovement },
             };
             Console.WriteLine("Initialized packets.");
