@@ -18,38 +18,35 @@ namespace GameServer
     static class SignUpClients
     {      
 
-        public static async Task SignUpClientToCognito(int _clientID, string _username, string _password, string _email, string _clientAppId)
+        public static async Task SignUpClientToCognito(int _clientID, string _username, string _password, string _email)
         {
-            AmazonCognitoIdentityProviderClient provider =
-        new AmazonCognitoIdentityProviderClient(new AnonymousAWSCredentials(), Constants.REGION);
-
-            //string SECRET_HASH = CognitoHashCalculator.GetSecretHash(_username, Constants.CLIENTAPP_ID, Constants.NeokySecret);
+            // Provider Already Defined on The Server with CognitoManager Constructor.
 
             SignUpRequest signUpRequest = new SignUpRequest()
             {
-                ClientId = _clientAppId,
+                ClientId = Constants.CLIENTAPP_ID,
                 Username = _username,
                 Password = _password,
                 SecretHash = CognitoHashCalculator.GetSecretHash(_username, Constants.CLIENTAPP_ID, Constants.NeokySecret)
             };
 
             List<AttributeType> attributes = new List<AttributeType>()
-        {
-            new AttributeType(){Name="email", Value = _email} // , si >> 1 sauf a la fin
-            //new AttributeType(){Name="custom:Money", Value = "1000"}
-        };
+            {
+                new AttributeType(){Name="email", Value = _email} // , si >> 1 sauf a la fin
+                //new AttributeType(){Name="custom:Money", Value = "1000"}
+            };
 
             // Send SignupRequest
             signUpRequest.UserAttributes = attributes;
 
-            Console.WriteLine("SignUpClientToCognito : Init.");
+            Console.WriteLine("SignUpClient.cs | Init.");
             try
             {
-                SignUpResponse result = await provider.SignUpAsync(signUpRequest);
+                SignUpResponse result = await Server.cognitoManagerServer.provider.SignUpAsync(signUpRequest);
 
                 if (result.HttpStatusCode == System.Net.HttpStatusCode.OK)
                 {
-                    Console.WriteLine("SignUpClientToCognito : Creation de Compte Finalisée.");
+                    Console.WriteLine("SignUpClient.cs | Sign Up Success");
                     //Server.clients[_clientID].myUser = user;
                     ServerSend.SignUpStatusReturn(_clientID,Constants.ADHESION_OK);
                     // Retourner le Statut Adhesion_OK

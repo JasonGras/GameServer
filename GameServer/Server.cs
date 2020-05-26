@@ -13,9 +13,12 @@ namespace GameServer
         public static Dictionary<int, Client> clients = new Dictionary<int, Client>();
         public delegate void PacketHandler(int _fromClient, Packet _packet);
         public static Dictionary<int, PacketHandler> packetHandlers;
+        public static CognitoManager cognitoManagerServer = new CognitoManager();
+        public static DynamoClient dynamoDBServer = new DynamoClient();
 
         private static TcpListener tcpListener;
         private static UdpClient udpListener;
+
 
         /// <summary>Starts the server.</summary>
         /// <param name="_maxPlayers">The maximum players that can be connected simultaneously.</param>
@@ -135,6 +138,8 @@ namespace GameServer
                 { (int)ClientPackets.signIn, ServerHandle.SignIpClientRequest },
                 { (int)ClientPackets.accessHomePage, ServerHandle.AccessHomePageClientRequest },
                 { (int)ClientPackets.redefinedPwd, ServerHandle.GetRedefinedPwd },
+                { (int)ClientPackets.forgotPwd, ServerHandle.GetForgotPwd },
+                 { (int)ClientPackets.forgotPwdRequest, ServerHandle.ForgotPwdClientRequest },
                 //{ (int)ClientPackets.playerMovement, ServerHandle.PlayerMovement },
             };
             Console.WriteLine("Initialized packets.");

@@ -67,6 +67,33 @@ namespace GameServer
                 await SignInClients.PwdRedefinedAuthentication(_username, _currentPwd, _fromClient, _newPwd);
             }
         }
+        public async static void GetForgotPwd(int _fromClient, Packet _packet)
+        {
+            // Getting the parameter from Client Packet ForgotPassword Request Pwd Change
+            int _clientIdCheck = _packet.ReadInt();
+            string _username = _packet.ReadString();
+            string _code = _packet.ReadString();
+            string _newPwd = _packet.ReadString();
+
+            if (_fromClient == _clientIdCheck)
+            {
+                await SignInClients.ResetPwdForgot(_username, _code, _fromClient, _newPwd);
+            }
+        }
+
+        public async static void ForgotPwdClientRequest(int _fromClient, Packet _packet)
+        {
+            // Getting the parameter from Client Packet ForgotPassword Request Pwd Change
+            int _clientIdCheck = _packet.ReadInt();
+            string _username = _packet.ReadString();
+            string _email = _packet.ReadString();
+
+            if (_fromClient == _clientIdCheck)
+            {
+                // Check in DB if Email is Right to improve Random Forget Password Requests
+                await SignInClients.ClientForgotPwdRequest(_username, _email,_fromClient);
+            }
+        }
 
         public async static void SignUpClientRequest(int _fromClient, Packet _packet)
         {
@@ -78,7 +105,7 @@ namespace GameServer
 
             if (_fromClient == _clientIdCheck)
             {
-                Server.clients[_fromClient].SignUptoCognito(_username, _password, _email, Constants.CLIENTAPP_ID);
+                Server.clients[_fromClient].SignUptoCognito(_username, _password, _email);
             }
             //string _signUpReturn = await SignUpClients.SignUpClientToCognito(_username, _password, _email, Constants.CLIENTAPP_ID);
             //Console.WriteLine($"{Server.clients[_fromClient].tcp.socket.Client.RemoteEndPoint} want to switch to {_desiredscene}.");
@@ -94,7 +121,7 @@ namespace GameServer
             string _password = _packet.ReadString();
 
             if (_fromClient == _clientIdCheck)
-            {
+            {                
                 Server.clients[_fromClient].SignInToCognito(_username, _password);
             }
         }

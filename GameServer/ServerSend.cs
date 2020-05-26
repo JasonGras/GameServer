@@ -137,6 +137,17 @@ namespace GameServer
             }
         }
 
+        public static void ClientForgotPasswordStatus(int _toClient, string _returnStatus)
+        {
+            using (Packet _packet = new Packet((int)ServerPackets.forgotPwdStatus)) // Définition du Nouveau Packet
+            {
+                _packet.Write(_returnStatus);
+                _packet.Write(_toClient);
+
+                SendTCPData(_toClient, _packet);
+            }
+        }        
+
         /// <summary>Tells a client if he Sign Up Successfully</summary>
         /// <param name="_newScene">The validated Scene to switch to</param>
         public static void SignUpStatusReturn(int _toClient, string _returnStatus)
@@ -160,6 +171,7 @@ namespace GameServer
                 SendTCPData(_toClient, _packet);
             }
         }
+
         public static void SendTokens(int _toClient, UserSession _clientTokens)
         {
             using (Packet _packet = new Packet((int)ServerPackets.signInToken))

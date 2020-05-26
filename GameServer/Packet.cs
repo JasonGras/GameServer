@@ -16,7 +16,8 @@ namespace GameServer
         signUpStatus,
         signInStatus,
         signInToken,
-        redefinePassword
+        redefinePassword,
+        forgotPwdStatus
 
         /*
         playerPosition,
@@ -32,6 +33,8 @@ namespace GameServer
         signUp,
         signIn,
         redefinedPwd,
+        forgotPwd,
+        forgotPwdRequest,
         accessHomePage,
         //playerMovement,
     }

@@ -24,7 +24,7 @@ namespace GameServer
         public Player player;
         public TCP tcp;
         public UDP udp;
-        public DynamoClient clientDynamoDB;
+
 
         public Client(int _clientId)
         {
@@ -230,14 +230,21 @@ namespace GameServer
             {
                 try
                 {
-                    clientDynamoDB = new DynamoClient();
+
                     //Get Player Data From Database
-                    var task = clientDynamoDB.ScanForNeokyClientsUsingUsername(_playerName);
+                    var task = Server.dynamoDBServer.ScanForNeokyClientsUsingUsername(_playerName);
+
+                    //Set Client Player Data with Database Return
                     player = task.Result;
+
                     // Get Table XP from DB and find the required Lvl Up from the Lvl
-                    player.required_levelup_xp = player.level * 100;
+                    player.required_levelup_xp = player.level * 100; // <= Temporary
+
+                    // Set the Scene to Unload depending from where you loged in (AUTHENTICATION / REDEFINE_PWD ..)
                     player.oldScene = _sceneToUnload;
-                    ServerSend.SpawnPlayer(id, player); // player param is useless
+
+                    // Ask the Client to Spawn the Player
+                    ServerSend.SpawnPlayer(id, player); 
                 }
                 catch(Exception e)
                 {
@@ -337,7 +344,7 @@ namespace GameServer
             ServerSend.SwitchToScene(id, _desiredScene, _oldScene);
         }
 
-        public async void SignUptoCognito(string _username, string _password, string _email, string _clientAppId)
+        public async void SignUptoCognito(string _username, string _password, string _email)
         {
             // If the REgEx Formats are Respected, we proceed to Adhesion OR We Return an Error Format
             if (SecurityCheck.CheckUserPattern(_username))
@@ -346,7 +353,7 @@ namespace GameServer
                 {
                     if (SecurityCheck.CheckEmailPattern(_email))
                     {
-                        await SignUpClients.SignUpClientToCognito(id, _username, _password, _email, _clientAppId);
+                        await SignUpClients.SignUpClientToCognito(id, _username, _password, _email);
                     }
                     else
                     {
@@ -362,10 +369,6 @@ namespace GameServer
             {
                 ServerSend.SignUpStatusReturn(id, Constants.ADHESION_FORMAT_USERNAME_KO);
             }
-
-
-            //Console.WriteLine("SignUpToCognito Return :"+_signUpReturn);
-
         }
         public async void SignInToCognito(string _username, string _password)
         {
@@ -377,6 +380,8 @@ namespace GameServer
                 {
                     // This will SET a UserCognito with Valid Tokens on my Client.
                     // And send the tokens to the Client who has Sign In
+                    //Server.clients[_fromClient].player.
+                    Server.clients[id].myUser = new CognitoUser(_username, Constants.CLIENTAPP_ID, Server.cognitoManagerServer.userPool, Server.cognitoManagerServer.provider, Constants.NeokySecret);
                     await SignInClients.SignInClientToCognito(_username, _password, id);
                 }
                 else
