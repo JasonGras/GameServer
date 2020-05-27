@@ -117,6 +117,11 @@ namespace GameServer
                     confirmForgotPasswordResponse = await cognito.ConfirmForgotPasswordAsync(confirmForgotPasswordRequest).ConfigureAwait(false);
                     ServerSend.ClientForgotPasswordStatus(_clientid, Constants.FORGOT_PASSWORD_CONFIRMED);
                 }
+                catch (CodeMismatchException ex)
+                {
+                    // Username Unknown or Code Expired
+                    ServerSend.ClientForgotPasswordStatus(_clientid, Constants.FORGOT_PASSWORD_CODE_MISMATCH_KO);
+                }
                 catch (ExpiredCodeException ex)
                 {
                     // Username Unknown or Code Expired

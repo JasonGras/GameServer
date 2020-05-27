@@ -17,7 +17,7 @@ namespace GameServer
         public float requiredLvlUpXp;*/
 
 
-        [DynamoDBHashKey]
+        
         public string client_id { get; set; }
 
         public string username { get; set; }
@@ -26,6 +26,7 @@ namespace GameServer
 
         public string account_statut { get; set; }
 
+        [DynamoDBHashKey]
         public string client_sub { get; set; }
 
         public float level { get; set; }
