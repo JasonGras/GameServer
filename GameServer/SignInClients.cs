@@ -252,8 +252,7 @@ namespace GameServer
                     {
                         Console.WriteLine("SignInClients.cs | Exception | Unknown Username or password.");
                         ServerSend.AuthenticationStatus(_clientid, Constants.AUTHENTICATION_REDEFINE_PWD_KO);
-                    }
-                    
+                    }                    
                     break;
                 case "Amazon.CognitoIdentityProvider.Model.UserNotConfirmedException":
                     Console.WriteLine("SignInClients.cs | Exception | Need User Email Confirmation.");
@@ -265,58 +264,5 @@ namespace GameServer
                     break;
             }
         }
-        /*public async Task SendUserToChangePasswordSceneAsync(AmazonCognitoIdentityProviderClient provider,string _username, AuthFlowResponse authFlowResponse)
-         {
-             var hash = Util.GetUserPoolSecretHash(_username, Constants.CLIENTAPP_ID, Constants.NeokySecret);
-
-             var challengeResponses = new Dictionary<string, string>
-                     {
-                     { "USERNAME", _username },
-                     { "NEW_PASSWORD", "Pas0304121988&" },
-                     { "SECRET_HASH", hash }
-                     };
-
-             var respondToAuthChallengeRequest = new AdminRespondToAuthChallengeRequest
-             {
-                 ChallengeName = ChallengeNameType.NEW_PASSWORD_REQUIRED,
-                 ChallengeResponses = challengeResponses,
-                 ClientId = Constants.CLIENTAPP_ID,//"app-client-id-here",
-                 Session = authFlowResponse.SessionID,
-                 UserPoolId = Constants.POOL_ID//"user-pool-id"
-             };
-
-             var challengeResponse = await provider.AdminRespondToAuthChallengeAsync(respondToAuthChallengeRequest).ConfigureAwait(false);
-
-             //challengeResponse will have a populated AuthenticationResult with IdToken, etc.
-         }*/
     }
 }
-/*
-// Get users Attribute
-GetUserRequest getUserRequest = new GetUserRequest();
-getUserRequest.AccessToken = authFlowResponse.AuthenticationResult.AccessToken;
-//Get User Values
-/*GetUserResponse getUser = await provider.GetUserAsync(getUserRequest);
-string _curMoney = getUser.UserAttributes.Where(a => a.Name == "custom:Money").First().Value;
-int _userMoney = Convert.ToInt32(_curMoney);
-
-Console.WriteLine("Total sur le compte de" + _username + ":" + _userMoney);*/
-
-// Attribute type definition
-/*AttributeType attributeType = new AttributeType()
-{
-    Name = "custom:Money",
-    Value = Convert.ToString(_userMoney + 10),// Valeur mise a jour
-};
-
-
-// Update Attribute Request
-UpdateUserAttributesRequest updateUserAttributesRequest = new UpdateUserAttributesRequest()
-{
-    AccessToken = authFlowResponse.AuthenticationResult.AccessToken
-};
-
-updateUserAttributesRequest.UserAttributes.Add(attributeType);
-provider.UpdateUserAttributes(updateUserAttributesRequest);
-
-Debug.Log("+10 on the Money of account " + _username);*/

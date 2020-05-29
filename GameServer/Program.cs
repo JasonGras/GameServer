@@ -12,8 +12,11 @@ namespace GameServer
             Console.Title = "Game Server";
             isRunning = true;
 
+            // Configure Nlogs
+            NlogClass.ConfigureNLog();
+
             Thread mainThread = new Thread(new ThreadStart(MainThread));
-            mainThread.Start();
+            mainThread.Start();            
 
             // Lance le serveur avec pour 1er Param le Nombre Max de Connections acceptées
             Server.Start(50, 26950);

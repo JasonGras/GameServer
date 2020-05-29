@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Text;
 
+using GameServer.Scenes;
+
 namespace GameServer
 {
     class ServerSend
@@ -103,8 +105,9 @@ namespace GameServer
                 _packet.Write(_player.level);
                 _packet.Write(_player.level_xp);
                 _packet.Write(_player.required_levelup_xp);
-                _packet.Write(_player.currentScene);
-                _packet.Write(_player.oldScene);
+                _packet.Write(_player.currentScene.sceneName);
+                _packet.Write(_player.unloadScene.sceneName);
+                //_packet.Write(_player.);
                 //_packet.Write(_player.rotation);
 
                 SendTCPData(_toClient, _packet);
@@ -113,12 +116,12 @@ namespace GameServer
 
         /// <summary>Tells a client to spawn a player.</summary>
         /// <param name="_newScene">The validated Scene to switch to</param>
-        public static void SwitchToScene(int _toClient, string _newScene, string _oldScene)
+        public static void SwitchToScene(int _toClient, Scene _newScene, Scene _currentScene)
         {
             using (Packet _packet = new Packet((int)ServerPackets.switchToScene))
             {                
-                _packet.Write(_newScene);
-                _packet.Write(_oldScene);
+                _packet.Write(_newScene.sceneName);
+                _packet.Write(_currentScene.sceneName);
                 _packet.Write(_toClient);
 
                 SendTCPData(_toClient, _packet);

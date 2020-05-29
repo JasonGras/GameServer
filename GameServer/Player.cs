@@ -5,6 +5,9 @@ using System.Numerics;
 
 using Amazon.DynamoDBv2.DataModel;
 
+using GameServer.Scenes;
+
+
 namespace GameServer
 {
     [DynamoDBTable("clients")]
@@ -35,13 +38,19 @@ namespace GameServer
 
         public float required_levelup_xp { get; set; }
 
-        public string currentScene;
-        public string oldScene;
+        public Scene currentScene;
+        public Scene unloadScene;
+
+
+        //public string currentScene;
+        //public string oldScene;
 
         public Player()
         {
-            oldScene = Constants.SCENE_NOSCENE;
-            currentScene = Constants.SCENE_HOMEPAGE;
+            currentScene = new HomePageScene();
+            unloadScene = new AuthenticationScene();
+            //oldScene = Constants.SCENE_NOSCENE;
+            //currentScene = Constants.SCENE_HOMEPAGE;
             // Without i have an error :  System.InvalidOperationException: Type GameServer.Player is unsupported, it cannot be instantiated
         }
 
@@ -61,8 +70,8 @@ namespace GameServer
             requiredLvlUpXp = _requiredLvlUpXp;*/
             //position = _spawnPosition;
             //rotation = Quaternion.Identity;
-            oldScene = Constants.SCENE_AUTHENTICATION;
-            currentScene = Constants.SCENE_HOMEPAGE;
+            currentScene = new HomePageScene();
+            unloadScene = new AuthenticationScene();
             //ariane = 
 
             //inputs = new bool[4];
@@ -104,6 +113,20 @@ namespace GameServer
                 hashCode = (hashCode * 397) ^ (required_levelup_xp != 0 ? required_levelup_xp.GetHashCode() : 0);
                 return hashCode;
             }
+        }
+
+        public bool playerCheckAccessDesiredScene(Scene _desiredScene)
+        {
+            // Search in oldScenes of the desiredScene if the currentScene is there
+            foreach (string _oldScene in _desiredScene.oldScenes)
+            {
+                if (_oldScene == currentScene.sceneName)
+                {
+
+                    return true;
+                }
+            }
+            return false;
         }
 
         /*public Player(int _id, string _username, Vector3 _spawnPosition, string _currentScene)

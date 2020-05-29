@@ -35,7 +35,7 @@ namespace GameServer
         redefinedPwd,
         forgotPwd,
         forgotPwdRequest,
-        accessHomePage,
+        stillAuthenticated,
         //playerMovement,
     }
 
@@ -383,19 +383,40 @@ namespace GameServer
         /// <param name="_moveReadPos">Whether or not to move the buffer's read position.</param>
         public Vector3 ReadVector3(bool _moveReadPos = true)
         {
-            return new Vector3(ReadFloat(_moveReadPos), ReadFloat(_moveReadPos), ReadFloat(_moveReadPos));
+            try
+            {
+                return new Vector3(ReadFloat(_moveReadPos), ReadFloat(_moveReadPos), ReadFloat(_moveReadPos));
+            }
+            catch (Exception e)
+            {
+                throw new Exception("Could not read value of type 'Vector3'!");
+            }
         }
 
         public UserSession ReadUserSession(bool _moveReadPos = true)
         {
-            return new UserSession(ReadString(_moveReadPos), ReadString(_moveReadPos), ReadString(_moveReadPos));// ReadFloat(_moveReadPos), ReadFloat(_moveReadPos), ReadFloat(_moveReadPos)
+            try
+            {
+                return new UserSession(ReadString(_moveReadPos), ReadString(_moveReadPos), ReadString(_moveReadPos));// ReadFloat(_moveReadPos), ReadFloat(_moveReadPos), ReadFloat(_moveReadPos)
+            }
+            catch (Exception e)
+            {
+                throw new Exception("Could not read value of type 'UserSession'!");
+            }
         }
 
         /// <summary>Reads a Quaternion from the packet.</summary>
         /// <param name="_moveReadPos">Whether or not to move the buffer's read position.</param>
         public Quaternion ReadQuaternion(bool _moveReadPos = true)
         {
-            return new Quaternion(ReadFloat(_moveReadPos), ReadFloat(_moveReadPos), ReadFloat(_moveReadPos), ReadFloat(_moveReadPos));
+            try
+            {
+                return new Quaternion(ReadFloat(_moveReadPos), ReadFloat(_moveReadPos), ReadFloat(_moveReadPos), ReadFloat(_moveReadPos));
+            }
+            catch (Exception e)
+            {
+                throw new Exception("Could not read value of type 'Quaternion'!");
+            }
         }
         #endregion
 

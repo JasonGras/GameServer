@@ -38,6 +38,14 @@
       "frameworks": {
         "netcoreapp3.0": {
           "dependencies": {
+            "AWS.Logger.AspNetCore": {
+              "target": "Package",
+              "version": "[2.2.0, )"
+            },
+            "AWS.Logger.NLog": {
+              "target": "Package",
+              "version": "[1.5.2, )"
+            },
             "AWSSDK.DynamoDBv2": {
               "target": "Package",
               "version": "[3.3.106.9, )"
@@ -49,6 +57,10 @@
             "AWSSDK.SecurityToken": {
               "target": "Package",
               "version": "[3.3.104.77, )"
+            },
+            "Microsoft.Extensions.Logging": {
+              "target": "Package",
+              "version": "[3.1.4, )"
             },
             "System.Numerics.Vectors": {
               "target": "Package",

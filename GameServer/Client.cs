@@ -4,12 +4,15 @@ using System.Text;
 using System.Net;
 using System.Net.Sockets;
 using System.Numerics;
+using System.Threading.Tasks;
 
 using Amazon.Extensions.CognitoAuthentication;
 using Amazon.CognitoIdentityProvider;
 using Amazon.Runtime;
 
-using System.Threading.Tasks;
+using GameServer.Scenes;
+using NLog;
+using NLog.Common;
 
 namespace GameServer
 {
@@ -241,7 +244,7 @@ namespace GameServer
                     player.required_levelup_xp = player.level * 100; // <= Temporary
 
                     // Set the Scene to Unload depending from where you loged in (AUTHENTICATION / REDEFINE_PWD ..)
-                    player.oldScene = _sceneToUnload;
+                    //player.oldScene = _sceneToUnload;
 
                     // Ask the Client to Spawn the Player
                     ServerSend.SpawnPlayer(id, player); 
@@ -276,72 +279,29 @@ namespace GameServer
             }*/
         }
 
+        // Principalement utilisé par le UIMenu du Client
         public void SwitchScene(string _desiredScene)
         {
-            
-            string _oldScene = Server.clients[id].player.currentScene;
-
-            //L'objectif de ce IF est de s'assurer que le client soit sur NOSCENE et qu'il ne peut accèder qu'aux pages désignes
-            // Homepage && Collection
-
-            /*if(_desiredScene == Server.clients[id].player.currentScene)
+            Scene _sceneFound = SceneManager.FindSceneByName(_desiredScene);
+            //string _oldScene = Server.clients[id].player.currentScene.sceneName;
+            if (_sceneFound != null)
             {
-                ActualiseScene(_desiredScene, Constants.SCENE_SAMESCENE);
-                Console.WriteLine("SAMESCENE | Current Scene : " + Server.clients[id].player.currentScene + " | Old Scene : " + Server.clients[id].player.oldScene);
+                if (Server.clients[id].player.playerCheckAccessDesiredScene(_sceneFound))
+                {
+                    ServerSend.SwitchToScene(id, _sceneFound, Server.clients[id].player.currentScene);
+                    // Update Current Scene
+                    Server.clients[id].player.currentScene = _sceneFound;
+                }
+                else
+                {
+                    //Console.WriteLine("User Cant access to this Scene !");
+                    NlogClass.target.WriteAsyncLogEvent(new AsyncLogEventInfo(new LogEventInfo(LogLevel.Warn, "Client.cs | SwitchScene", "PLayer [" + Server.clients[id].player.username + "] is trying to Access to a Scene wich is not Accessible. [Current Scene : "+ Server.clients[id].player.currentScene.sceneName + " | Desired Scene : "+ _desiredScene+"]"), NlogClass.exceptions.Add));
+                }
             }
             else
             {
-                ActualiseScene(_desiredScene, Server.clients[id].player.currentScene);
-                Console.WriteLine("NO SAMESCENE |Current Scene : " + Server.clients[id].player.currentScene + " | Old Scene : " + Server.clients[id].player.oldScene);
-            }*/
-
-            /* if (Server.clients[id].player.currentScene == Constants.SCENE_NOSCENE) // Sur la HomePage
-             {               
-                 if (_desiredScene == Constants.SCENE_COLLECTION) // is Collection Scene
-                 {
-                     ActualiseScene(_desiredScene, Constants.SCENE_NOSCENE);
-                 }
-                 if (_desiredScene == Constants.SCENE_HOMEPAGE) // is Home Scene
-                 {
-                     ActualiseScene(_desiredScene, Constants.SCENE_NOSCENE);
-                 }
-             } */
-            if (_desiredScene == Server.clients[id].player.currentScene || Constants.SCENE_NOSCENE == Server.clients[id].player.currentScene)
-            {
-                ActualiseScene(_desiredScene, Constants.SCENE_SAMESCENE);
-                Console.WriteLine("SAMESCENE | Current Scene : " + Server.clients[id].player.currentScene + " | Old Scene : " + Server.clients[id].player.oldScene);
+                NlogClass.target.WriteAsyncLogEvent(new AsyncLogEventInfo(new LogEventInfo(LogLevel.Warn, "Client.cs | SwitchScene", "Scene ["+ _desiredScene + "] requested by ["+ Server.clients[id].player.username +"] does not exist !"), NlogClass.exceptions.Add));
             }
-            // Si le client est sur la homePage 
-            if (Server.clients[id].player.currentScene == Constants.SCENE_HOMEPAGE)
-            {
-                //Si la scene désirée est bien la Collection
-                if(_desiredScene == Constants.SCENE_COLLECTION)
-                {
-                    ActualiseScene(_desiredScene, _oldScene);
-                    Console.WriteLine("Home => Coll | Current Scene : " + Server.clients[id].player.currentScene + " | Old Scene : " + Server.clients[id].player.oldScene);
-                }                
-            }
-            if (Server.clients[id].player.currentScene == Constants.SCENE_COLLECTION)
-            {
-                //Si la scene désirée est bien la Collection
-                if (_desiredScene == Constants.SCENE_HOMEPAGE)
-                {
-                    ActualiseScene(_desiredScene, _oldScene);
-                    Console.WriteLine("Coll => Home | Current Scene : " + Server.clients[id].player.currentScene + " | Old Scene : " + Server.clients[id].player.oldScene);
-                }
-            }
-        }
-
-        private void ActualiseScene(string _desiredScene, string _oldScene)
-        {
-            // Alors sur le serveur on Assigne sa Current Scene a SCENE_HOMEPAGE
-            Server.clients[id].player.currentScene = _desiredScene;
-
-            // j'actualise ma OldScene
-            Server.clients[id].player.oldScene = _oldScene;
-
-            // Et on confirme au client qu'il peut Switch de Scene
-            ServerSend.SwitchToScene(id, _desiredScene, _oldScene);
         }
 
         public async void SignUptoCognito(string _username, string _password, string _email)
@@ -402,26 +362,40 @@ namespace GameServer
             // Current Scene = Homepage
             // Ask Client to Load Homepage
             // Et on confirme au client qu'il peut Switch de Scene
-            ServerSend.SwitchToScene(id, Constants.SCENE_HOMEPAGE, Constants.SCENE_NOSCENE);
+            //ServerSend.SwitchToScene(id, Constants.SCENE_HOMEPAGE, Constants.SCENE_NOSCENE);
         }
 
-        public async Task GetNewValidTokensAsync()
+        public async Task GetNewValidTokensAsync(string _RefreshToken)
         {
 
             //var CompareTokens = Server.clients[id].myUser.SessionTokens.IdToken;
-            Server.clients[id].myUser.SessionTokens = new CognitoUserSession(null, null, Server.clients[id].myUser.SessionTokens.RefreshToken, DateTime.Now, DateTime.Now.AddHours(1));
+            Server.clients[id].myUser.SessionTokens = new CognitoUserSession(null, null, _RefreshToken, DateTime.Now, DateTime.Now.AddHours(1));
 
             InitiateRefreshTokenAuthRequest refreshRequest = new InitiateRefreshTokenAuthRequest()
             {
                 AuthFlowType = AuthFlowType.REFRESH_TOKEN_AUTH
-            };
+            };           
 
-            AuthFlowResponse authResponse = await Server.clients[id].myUser.StartWithRefreshTokenAuthAsync(refreshRequest).ConfigureAwait(false);
-            UserSession refreshedUserSession = new UserSession(Server.clients[id].myUser.SessionTokens.AccessToken, Server.clients[id].myUser.SessionTokens.IdToken, Server.clients[id].myUser.SessionTokens.RefreshToken);
-            ServerSend.SendTokens(id, refreshedUserSession);
-            //authResponse.AuthenticationResult.
-            //CompareTokens += " | " + Server.clients[id].myUser.SessionTokens.IdToken;
-            //Console.WriteLine(CompareTokens);
+            try
+            {
+                Console.WriteLine("Client.cs | GetNewValidTokensAsync | StartWithRefreshTokenAuthAsync try lunched !");
+                AuthFlowResponse authResponse = await Server.clients[id].myUser.StartWithRefreshTokenAuthAsync(refreshRequest).ConfigureAwait(false);
+                currentUserSession = new UserSession(Server.clients[id].myUser.SessionTokens.AccessToken, Server.clients[id].myUser.SessionTokens.IdToken, Server.clients[id].myUser.SessionTokens.RefreshToken);
+
+                Console.WriteLine("Client.cs | GetNewValidTokensAsync | SessionUpdated sended to Client");
+                ServerSend.SendTokens(id, currentUserSession);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("Client.cs | GetNewValidTokensAsync | StartWithRefreshTokenAuthAsync failed to Refresh Session");
+                switch (e.GetType().ToString())
+                {
+                    default:
+                        Console.WriteLine("Client.cs | GetNewValidTokensAsync | Unknown Exception | " + e.GetType().ToString() + " | " + e);
+                        //ServerSend.ClientForgotPasswordStatus(_clientid, Constants.FORGOT_PASSWORD_KO);
+                        break;
+                }
+            }
         }
 
         /// <summary>Disconnects the client and stops all network traffic.</summary>

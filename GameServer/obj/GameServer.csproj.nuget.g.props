@@ -18,5 +18,6 @@
     <PkgAWSSDK_CognitoIdentityProvider Condition=" '$(PkgAWSSDK_CognitoIdentityProvider)' == '' ">C:\Users\Jas\.nuget\packages\awssdk.cognitoidentityprovider\3.3.4.3</PkgAWSSDK_CognitoIdentityProvider>
     <PkgAWSSDK_CognitoIdentity Condition=" '$(PkgAWSSDK_CognitoIdentity)' == '' ">C:\Users\Jas\.nuget\packages\awssdk.cognitoidentity\3.3.2.14</PkgAWSSDK_CognitoIdentity>
     <PkgAWSSDK_DynamoDBv2 Condition=" '$(PkgAWSSDK_DynamoDBv2)' == '' ">C:\Users\Jas\.nuget\packages\awssdk.dynamodbv2\3.3.106.9</PkgAWSSDK_DynamoDBv2>
+    <PkgAWSSDK_CloudWatchLogs Condition=" '$(PkgAWSSDK_CloudWatchLogs)' == '' ">C:\Users\Jas\.nuget\packages\awssdk.cloudwatchlogs\3.3.100.39</PkgAWSSDK_CloudWatchLogs>
   </PropertyGroup>
 </Project>

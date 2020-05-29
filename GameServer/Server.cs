@@ -4,6 +4,8 @@ using System.Text;
 using System.Net;
 using System.Net.Sockets;
 
+using GameServer.Scenes;
+
 namespace GameServer
 {
     class Server
@@ -30,6 +32,8 @@ namespace GameServer
 
             Console.WriteLine("Starting server...");
             InitializeServerData();
+
+            SceneManager.InitializeSceneData();
 
             // Initialisation du TCP Listener
             tcpListener = new TcpListener(IPAddress.Any, Port);
@@ -136,7 +140,7 @@ namespace GameServer
                 { (int)ClientPackets.switchScene, ServerHandle.DesiredPlayerScene },
                 { (int)ClientPackets.signUp, ServerHandle.SignUpClientRequest },
                 { (int)ClientPackets.signIn, ServerHandle.SignIpClientRequest },
-                { (int)ClientPackets.accessHomePage, ServerHandle.AccessHomePageClientRequest },
+                { (int)ClientPackets.stillAuthenticated, ServerHandle.CheckAuthenticationPlayerAsync },
                 { (int)ClientPackets.redefinedPwd, ServerHandle.GetRedefinedPwd },
                 { (int)ClientPackets.forgotPwd, ServerHandle.GetForgotPwd },
                  { (int)ClientPackets.forgotPwdRequest, ServerHandle.ForgotPwdClientRequest },
