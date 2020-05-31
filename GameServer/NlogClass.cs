@@ -29,14 +29,21 @@ namespace GameServer
             {
                 LogGroup = "NeokyGroup",
                 Region = "eu-west-2",
-                Credentials = new BasicAWSCredentials(Constants.AWS_ACCESS_KEY_ID, Constants.AWS_SECRET_ACCESS_KEY)
+                Credentials = new BasicAWSCredentials(Constants.AWS_ACCESS_KEY_ID, Constants.AWS_SECRET_ACCESS_KEY),
+                Layout = "${longdate}|[${level}]|${logger}|${message}${onexception:inner=|${exception}${when:when=(level > LogLevel.Warn):inner=|[!] ${exception:format=ToString:innerFormat=Message:maxInnerExceptionLevel=5} }}"
             };
-            config.AddTarget("aws", awsTarget);
 
+            //awsTarget.Layout = "";
+
+            config.AddTarget("aws", awsTarget);
             config.LoggingRules.Add(new LoggingRule("*", LogLevel.Debug, consoleTarget));
             config.LoggingRules.Add(new LoggingRule("*", LogLevel.Debug, awsTarget));
 
+            
+
             LogManager.Configuration = config;
+
+            
             target = LogManager.Configuration.FindTargetByName("aws");
             exceptions = new List<Exception>();
         }

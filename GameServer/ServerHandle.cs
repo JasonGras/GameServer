@@ -67,15 +67,15 @@ namespace GameServer
 
                         //target.InitializeTarget();
 
-                        FirstDungeon FirstDungeon = new FirstDungeon();
+                        //FirstDungeon FirstDungeon = new FirstDungeon();
                         // Send client to FirstDungeon spawnScene
-                        if (FirstDungeon.playerCanAccessDungeon(Server.clients[_fromClient].player.level))
-                        {
+                        //if (FirstDungeon.playerCanAccessDungeon(Server.clients[_fromClient].player.level))
+                        //{
                             //if (FirstDungeon.playerCanAccessDesiredScene(FirstDungeon.spawnScene, "playerCurrentScene"))
                             //{
 
                             //}
-                        }
+                        //}
 
 
                         //NlogClass.target.WriteAsyncLogEvent(new LogEventInfo(LogLevel.Info, "NlogClass", "message1").WithContinuation(NlogClass.exceptions.Add));
@@ -138,6 +138,74 @@ namespace GameServer
                 if (Server.clients[_fromClient].myUser.SessionTokens.IsValid())
                 {
                     Server.clients[_fromClient].SwitchScene(_desiredscene);
+                }
+            }
+        }
+
+        public static void PlayerAskEnterDungeon(int _fromClient, Packet _packet)
+        {
+            // Getting the parameter from Client Packet
+            int _clientIdCheck = _packet.ReadInt();
+            UserSession _currentUserSession = _packet.ReadUserSession();
+            string _desiredDungeon = _packet.ReadString();
+
+            if (_fromClient == _clientIdCheck)
+            {
+                Console.WriteLine($"{Server.clients[_fromClient].tcp.socket.Client.RemoteEndPoint} want to enter Dungeon {_desiredDungeon}.");
+
+               
+                //Check if Session is Still Valid
+                if (!Server.clients[_fromClient].myUser.SessionTokens.IsValid())
+                {
+                    //_ = Server.clients[_fromClient].GetNewValidTokensAsync();
+                    Console.WriteLine("UserSession Updated.");
+                }
+                //Server.clients[_fromClient].myUser.StartWithRefreshTokenAuthAsync();
+                // For Valid Sessions, we can go to the desired Scene
+                if (Server.clients[_fromClient].myUser.SessionTokens.IsValid())
+                {
+                    Server.clients[_fromClient].EnterDungeon(_desiredDungeon);
+                }
+            }
+        }
+
+        public static void FightPacketReceieved(int _fromClient, Packet _packet)
+        {
+            // Getting the parameter from Client Packet
+            int _clientIdCheck = _packet.ReadInt();
+            UserSession _currentUserSession = _packet.ReadUserSession();
+            string _fightRequest = _packet.ReadString();
+
+            if (_fromClient == _clientIdCheck)
+            {
+                Console.WriteLine($"{Server.clients[_fromClient].tcp.socket.Client.RemoteEndPoint} request with FIGHT Packets : {_fightRequest}.");
+
+
+                //Check if Session is Still Valid
+                if (!Server.clients[_fromClient].myUser.SessionTokens.IsValid())
+                {
+                    //_ = Server.clients[_fromClient].GetNewValidTokensAsync();
+                    Console.WriteLine("UserSession Updated.");
+                }
+                //Server.clients[_fromClient].myUser.StartWithRefreshTokenAuthAsync();
+                // For Valid Sessions, we can go to the desired Scene
+                if (Server.clients[_fromClient].myUser.SessionTokens.IsValid())
+                {
+                    switch (_fightRequest)
+                    {
+                        case "INIT_FIGHT":
+                            // Check if player is in right to Init a fight
+                            Server.clients[_fromClient].setFight();
+                            break;
+
+                        default:
+                            Console.WriteLine("Unkown Fight Packet Recieved.");
+                            break;
+                    }
+
+
+
+                    
                 }
             }
         }

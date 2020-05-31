@@ -38,6 +38,9 @@ namespace GameServer
 
         public float required_levelup_xp { get; set; }
 
+        //[DynamoDBProperty(AttributeName = "PlayerCrew")]
+        public Dictionary<string, string> PlayerCrew { get; set; }
+
         public Scene currentScene;
         public Scene unloadScene;
 
@@ -128,6 +131,7 @@ namespace GameServer
             }
             return false;
         }
+
 
         /*public Player(int _id, string _username, Vector3 _spawnPosition, string _currentScene)
         {

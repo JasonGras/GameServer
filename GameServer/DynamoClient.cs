@@ -102,5 +102,23 @@ namespace GameServer
             var result = await search.GetRemainingAsync();
             return result.FirstOrDefault();
         }
+
+        public async Task<NeokyCollection> ScanForNeokyCollectionUsingCollectionID(string _collectionID)
+        {
+            var search = _context.ScanAsync<NeokyCollection>
+            (
+                new[]
+                {
+                    new ScanCondition
+                    (
+                        nameof(NeokyCollection.collection_id),
+                        ScanOperator.Equal,
+                        _collectionID
+                    )
+                }
+            );
+            var result = await search.GetRemainingAsync();
+            return result.FirstOrDefault();
+        }
     }
 }

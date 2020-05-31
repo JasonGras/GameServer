@@ -13,6 +13,7 @@ using Amazon.Runtime;
 using GameServer.Scenes;
 using NLog;
 using NLog.Common;
+using GameServer.Dungeon;
 
 namespace GameServer
 {
@@ -27,6 +28,8 @@ namespace GameServer
         public Player player;
         public TCP tcp;
         public UDP udp;
+        public Dictionary<int,NeokyCollection> ClientCollection;
+        public Dictionary<int,NeokyCollection> EnemyCrew;
 
 
         public Client(int _clientId)
@@ -233,7 +236,6 @@ namespace GameServer
             {
                 try
                 {
-
                     //Get Player Data From Database
                     var task = Server.dynamoDBServer.ScanForNeokyClientsUsingUsername(_playerName);
 
@@ -252,7 +254,8 @@ namespace GameServer
                 catch(Exception e)
                 {
                     Console.WriteLine("Client.cs | Client Scan Failed : " + e);
-                }                
+                    NlogClass.target.WriteAsyncLogEvent(new AsyncLogEventInfo(new LogEventInfo(LogLevel.Warn, "SendIntoGame", "Database scan to initialize player failed for  [ Player claimed name : " + _playerName + "]"), NlogClass.exceptions.Add));
+                }
             }
             
 
@@ -282,6 +285,7 @@ namespace GameServer
         // Principalement utilisé par le UIMenu du Client
         public void SwitchScene(string _desiredScene)
         {
+
             Scene _sceneFound = SceneManager.FindSceneByName(_desiredScene);
             //string _oldScene = Server.clients[id].player.currentScene.sceneName;
             if (_sceneFound != null)
@@ -295,13 +299,379 @@ namespace GameServer
                 else
                 {
                     //Console.WriteLine("User Cant access to this Scene !");
-                    NlogClass.target.WriteAsyncLogEvent(new AsyncLogEventInfo(new LogEventInfo(LogLevel.Warn, "Client.cs | SwitchScene", "PLayer [" + Server.clients[id].player.username + "] is trying to Access to a Scene wich is not Accessible. [Current Scene : "+ Server.clients[id].player.currentScene.sceneName + " | Desired Scene : "+ _desiredScene+"]"), NlogClass.exceptions.Add));
+                    NlogClass.target.WriteAsyncLogEvent(new AsyncLogEventInfo(new LogEventInfo(LogLevel.Warn, "SwitchScene", "PLayer [" + Server.clients[id].player.username + "] is trying to Access to a Scene wich is not Accessible. [Current Scene : " + Server.clients[id].player.currentScene.sceneName + " | Desired Scene : " + _desiredScene + "]"), NlogClass.exceptions.Add));
                 }
             }
             else
             {
-                NlogClass.target.WriteAsyncLogEvent(new AsyncLogEventInfo(new LogEventInfo(LogLevel.Warn, "Client.cs | SwitchScene", "Scene ["+ _desiredScene + "] requested by ["+ Server.clients[id].player.username +"] does not exist !"), NlogClass.exceptions.Add));
+                NlogClass.target.WriteAsyncLogEvent(new AsyncLogEventInfo(new LogEventInfo(LogLevel.Warn, "SwitchScene", "Scene [" + _desiredScene + "] requested by [" + Server.clients[id].player.username + "] does not exist !"), NlogClass.exceptions.Add));
             }
+        }
+
+        public void EnterDungeon(string _desiredDungeon)
+        {
+            Dungeon.Dungeon _dungeonFound = DungeonManager.FindDungeonByName(_desiredDungeon);
+
+
+            if (_dungeonFound != null)
+            {   // Dungeon Exists                
+                if (_dungeonFound.playerCanAccessDungeon(Server.clients[id].player.level))
+                {   //Player have the right level for this Dungeon                    
+                    if (_dungeonFound.playerCanAccessDesiredDungeonMap(_dungeonFound, Server.clients[id].player.currentScene.sceneName))
+                    {   // Dungeon Spawn Scene exist for this Dungeon & Player is on the Right CurrentScene to Access it
+
+                        ServerSend.SwitchToScene(id, _dungeonFound.spawnScene, Server.clients[id].player.currentScene);
+                        // Update Current Scene
+                        Server.clients[id].player.currentScene = _dungeonFound.spawnScene;
+                    }
+                    else
+                    {
+                        Console.WriteLine("SpawnScene does not exist for this Dungeon OR Player is trying to access to the Scene from a bad Entry Point.");
+                        NlogClass.target.WriteAsyncLogEvent(new AsyncLogEventInfo(new LogEventInfo(LogLevel.Warn, "EnterDungeon", "SpawnDungeonScene does not exist for this Dungeon OR Player [" + Server.clients[id].player.username + "] is trying to access to the Scene from a bad Entry Point. [CurrentScene : " + Server.clients[id].player.currentScene.sceneName + "]"), NlogClass.exceptions.Add));
+
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("Player dont have the level required to Access this Dungeon.");
+                    NlogClass.target.WriteAsyncLogEvent(new AsyncLogEventInfo(new LogEventInfo(LogLevel.Warn, "EnterDungeon", "Player [" + Server.clients[id].player.username + "] dont have the level required to Access this Dungeon. [Lvl : " + Server.clients[id].player.level + "]"), NlogClass.exceptions.Add));
+                }
+            }
+        }
+
+        public void setFight ()
+        {
+            ClientCollection = new Dictionary<int, NeokyCollection>();
+            EnemyCrew = new Dictionary<int, NeokyCollection>();
+
+
+            if (Server.clients[id].player.currentScene.enemyCrewMember != null)
+            {
+                // Foreach to Set Up the Enemy Crew
+                foreach (var item in Server.clients[id].player.currentScene.enemyCrewMember)
+                {
+                
+                    switch (item.Key)
+                    {
+                        case 1:
+                            // In case the 1st Member of the crew is Set 
+                            if (item.Value != null)
+                            {   // If the value "Exists" / is a Real Value
+                                try
+                                {
+                                    //Try Update the Collection Data
+                                    var dynamoScanTask = Server.dynamoDBServer.ScanForNeokyCollectionUsingCollectionID(item.Value.collection_id);
+                                    EnemyCrew.Add(1, dynamoScanTask.Result); // 1st Member , Neoky Collection Updated (Id, Stats)
+                                    Console.WriteLine("setFight | Scan Collection Data Success");
+                                }
+                                catch (Exception e)
+                                {
+                                    Console.WriteLine("setFight | Scan Collection to Update Collection Data Failed");
+                                    //throw;
+                                }
+                            }
+                            else
+                            {
+                                Console.WriteLine("setFight | Player have not set a Member_01 value is Null.");
+                            }
+                            break;
+                        case 2:
+                            // In case the 1st Member of the crew is Set 
+                            if (item.Value != null)
+                            {   // If the value "Exists" / is a Real Value
+                                try
+                                {
+                                    //Try Update the Collection Data
+                                    var dynamoScanTask = Server.dynamoDBServer.ScanForNeokyCollectionUsingCollectionID(item.Value.collection_id);
+                                    EnemyCrew.Add(2, dynamoScanTask.Result); // 1st Member , Neoky Collection Updated (Id, Stats)
+                                    Console.WriteLine("setFight | Scan Collection Data Success");
+                                }
+                                catch (Exception e)
+                                {
+                                    Console.WriteLine("setFight | Scan Collection to Update Collection Data Failed");
+                                    //throw;
+                                }
+                            }
+                            else
+                            {
+                                Console.WriteLine("setFight | Player have not set a Member_01 value is Null.");
+                            }
+                            break;
+                        case 3:
+                            // In case the 1st Member of the crew is Set 
+                            if (item.Value != null)
+                            {   // If the value "Exists" / is a Real Value
+                                try
+                                {
+                                    //Try Update the Collection Data
+                                    var dynamoScanTask = Server.dynamoDBServer.ScanForNeokyCollectionUsingCollectionID(item.Value.collection_id);
+                                    EnemyCrew.Add(3, dynamoScanTask.Result); // 1st Member , Neoky Collection Updated (Id, Stats)
+                                    Console.WriteLine("setFight | Scan Collection Data Success");
+                                }
+                                catch (Exception e)
+                                {
+                                    Console.WriteLine("setFight | Scan Collection to Update Collection Data Failed");
+                                    //throw;
+                                }
+                            }
+                            else
+                            {
+                                Console.WriteLine("setFight | Player have not set a Member_01 value is Null.");
+                            }
+                            break;
+                        case 4:
+                            // In case the 1st Member of the crew is Set 
+                            if (item.Value != null)
+                            {   // If the value "Exists" / is a Real Value
+                                try
+                                {
+                                    //Try Update the Collection Data
+                                    var dynamoScanTask = Server.dynamoDBServer.ScanForNeokyCollectionUsingCollectionID(item.Value.collection_id);
+                                    EnemyCrew.Add(4, dynamoScanTask.Result); // 1st Member , Neoky Collection Updated (Id, Stats)
+                                    Console.WriteLine("setFight | Scan Collection Data Success");
+                                }
+                                catch (Exception e)
+                                {
+                                    Console.WriteLine("setFight | Scan Collection to Update Collection Data Failed");
+                                    //throw;
+                                }
+                            }
+                            else
+                            {
+                                Console.WriteLine("setFight | Player have not set a Member_01 value is Null.");
+                            }
+                            break;
+                        case 5:
+                            // In case the 1st Member of the crew is Set 
+                            if (item.Value != null)
+                            {   // If the value "Exists" / is a Real Value
+                                try
+                                {
+                                    //Try Update the Collection Data
+                                    var dynamoScanTask = Server.dynamoDBServer.ScanForNeokyCollectionUsingCollectionID(item.Value.collection_id);
+                                    EnemyCrew.Add(5, dynamoScanTask.Result); // 1st Member , Neoky Collection Updated (Id, Stats)
+                                    Console.WriteLine("setFight | Scan Collection Data Success");
+                                }
+                                catch (Exception e)
+                                {
+                                    Console.WriteLine("setFight | Scan Collection to Update Collection Data Failed");
+                                    //throw;
+                                }
+                            }
+                            else
+                            {
+                                Console.WriteLine("setFight | Player have not set a Member_01 value is Null.");
+                            }
+                            break;
+                        case 6:
+                            // In case the 1st Member of the crew is Set 
+                            if (item.Value != null)
+                            {   // If the value "Exists" / is a Real Value
+                                try
+                                {
+                                    //Try Update the Collection Data
+                                    var dynamoScanTask = Server.dynamoDBServer.ScanForNeokyCollectionUsingCollectionID(item.Value.collection_id);
+                                    EnemyCrew.Add(6, dynamoScanTask.Result); // 1st Member , Neoky Collection Updated (Id, Stats)
+                                    Console.WriteLine("setFight | Scan Collection Data Success");
+                                }
+                                catch (Exception e)
+                                {
+                                    Console.WriteLine("setFight | Scan Collection to Update Collection Data Failed");
+                                    //throw;
+                                }
+                            }
+                            else
+                            {
+                                Console.WriteLine("setFight | Player have not set a Member_01 value is Null.");
+                            }
+                            break;
+                        default:
+                            Console.WriteLine("setFight | We found a Key we cant read.");
+                            break;
+                    }
+                }
+            }
+            else
+            {
+                Console.WriteLine("setFight | enemyCrewMember seems Empty.");
+            }
+
+            if (Server.clients[id].player.PlayerCrew != null)
+            {
+                // Foreach to Set Up the Player Crew
+                foreach (var item in Server.clients[id].player.PlayerCrew)
+                {
+                    switch (item.Key)
+                    {
+                        case "Member_01":
+                            // In case the 1st Member of the crew is Set 
+                            if (item.Value != null)
+                            {   // If the value "Exists" / is a Real Value
+                                try
+                                {
+                                    //Try Update the Collection Data
+                                    var dynamoScanTask = Server.dynamoDBServer.ScanForNeokyCollectionUsingCollectionID(item.Value);
+                                    ClientCollection.Add(1, dynamoScanTask.Result); // 1st Member , Neoky Collection Updated (Id, Stats)
+                                    Console.WriteLine("setFight | Scan Collection Data Success");
+                                }
+                                catch (Exception e)
+                                {
+                                    Console.WriteLine("setFight | Scan Collection to Update Collection Data Failed");
+                                    //throw;
+                                }
+                            }
+                            else
+                            {
+                                Console.WriteLine("setFight | Player have not set a Member_01 value is Null.");
+                            }
+                            break;
+                        case "Member_02":
+                            // In case the 1st Member of the crew is Set 
+                            if (item.Value != null)
+                            {   // If the value "Exists" / is a Real Value
+                                try
+                                {
+                                    //Try Update the Collection Data
+                                    var dynamoScanTask = Server.dynamoDBServer.ScanForNeokyCollectionUsingCollectionID(item.Value);
+                                    ClientCollection.Add(2, dynamoScanTask.Result); // 1st Member , Neoky Collection Updated (Id, Stats)
+                                    Console.WriteLine("setFight | Scan Collection Data Success");
+                                }
+                                catch (Exception e)
+                                {
+                                    Console.WriteLine("setFight | Scan Collection to Update Collection Data Failed");
+                                    //throw;
+                                }
+                            }
+                            else
+                            {
+                                Console.WriteLine("setFight | Player have not set a Member_01 value is Null.");
+                            }
+                            break;
+                        case "Member_03":
+                            // In case the 1st Member of the crew is Set 
+                            if (item.Value != null)
+                            {   // If the value "Exists" / is a Real Value
+                                try
+                                {
+                                    //Try Update the Collection Data
+                                    var dynamoScanTask = Server.dynamoDBServer.ScanForNeokyCollectionUsingCollectionID(item.Value);
+                                    ClientCollection.Add(3, dynamoScanTask.Result); // 1st Member , Neoky Collection Updated (Id, Stats)
+                                    Console.WriteLine("setFight | Scan Collection Data Success");
+                                }
+                                catch (Exception e)
+                                {
+                                    Console.WriteLine("setFight | Scan Collection to Update Collection Data Failed");
+                                    //throw;
+                                }
+                            }
+                            else
+                            {
+                                Console.WriteLine("setFight | Player have not set a Member_01 value is Null.");
+                            }
+                            break;
+                        case "Member_04":
+                            // In case the 1st Member of the crew is Set 
+                            if (item.Value != null)
+                            {   // If the value "Exists" / is a Real Value
+                                try
+                                {
+                                    //Try Update the Collection Data
+                                    var dynamoScanTask = Server.dynamoDBServer.ScanForNeokyCollectionUsingCollectionID(item.Value);
+                                    ClientCollection.Add(4, dynamoScanTask.Result); // 1st Member , Neoky Collection Updated (Id, Stats)
+                                    Console.WriteLine("setFight | Scan Collection Data Success");
+                                }
+                                catch (Exception e)
+                                {
+                                    Console.WriteLine("setFight | Scan Collection to Update Collection Data Failed");
+                                    //throw;
+                                }
+                            }
+                            else
+                            {
+                                Console.WriteLine("setFight | Player have not set a Member_01 value is Null.");
+                            }
+                            break;
+                        case "Member_05":
+                            // In case the 1st Member of the crew is Set 
+                            if (item.Value != null)
+                            {   // If the value "Exists" / is a Real Value
+                                try
+                                {
+                                    //Try Update the Collection Data
+                                    var dynamoScanTask = Server.dynamoDBServer.ScanForNeokyCollectionUsingCollectionID(item.Value);
+                                    ClientCollection.Add(5, dynamoScanTask.Result); // 1st Member , Neoky Collection Updated (Id, Stats)
+                                    Console.WriteLine("setFight | Scan Collection Data Success");
+                                }
+                                catch (Exception e)
+                                {
+                                    Console.WriteLine("setFight | Scan Collection to Update Collection Data Failed");
+                                    //throw;
+                                }
+                            }
+                            else
+                            {
+                                Console.WriteLine("setFight | Player have not set a Member_01 value is Null.");
+                            }
+                            break;
+                        case "Member_06":
+                            // In case the 1st Member of the crew is Set 
+                            if (item.Value != null)
+                            {   // If the value "Exists" / is a Real Value
+                                try
+                                {
+                                    //Try Update the Collection Data
+                                    var dynamoScanTask = Server.dynamoDBServer.ScanForNeokyCollectionUsingCollectionID(item.Value);
+                                    ClientCollection.Add(6, dynamoScanTask.Result); // 1st Member , Neoky Collection Updated (Id, Stats)
+                                    Console.WriteLine("setFight | Scan Collection Data Success");
+                                }
+                                catch (Exception e)
+                                {
+                                    Console.WriteLine("setFight | Scan Collection to Update Collection Data Failed");
+                                    //throw;
+                                }
+                            }
+                            else
+                            {
+                                Console.WriteLine("setFight | Player have not set a Member_01 value is Null.");
+                            }
+                            break;
+                        default:
+                            Console.WriteLine("setFight | We found a Key we cant read.");
+                            break;
+                    }
+
+                }
+            }
+            else
+            {
+                Console.WriteLine("setFight | Player Crew seems Empty.");
+            }
+
+            // Foreach to send the EnemyCrew to the player
+            /*foreach (var _enemyCrewMember in EnemyCrew)
+            {
+                if (_enemyCrewMember.Value != null)
+                {
+                    // Set the Member crew as Spawned
+                    _enemyCrewMember.Value.isSpawned = true;
+                    //ServerSend.SpawnEnemyMemberCrew(id, _enemyCrewMember.Key, _enemyCrewMember.Value);
+                    
+                }
+            }*/
+
+
+            ServerSend.SpawnEnemyAllCrew(id, EnemyCrew.Count, EnemyCrew);
+            ServerSend.SpawnPlayerAllCrew(id, ClientCollection.Count, ClientCollection);
+            // Foreach to send the crew to the player
+            /*foreach (var _crewMember in ClientCollection)
+            {
+                if (_crewMember.Value != null)
+                {
+                    // Set the Member crew as Spawned
+                    _crewMember.Value.isSpawned = true;
+                    ServerSend.SpawnMemberCrew(id, _crewMember.Key, _crewMember.Value);                    
+                }
+            }*/
         }
 
         public async void SignUptoCognito(string _username, string _password, string _email)

@@ -5,6 +5,7 @@ using System.Net;
 using System.Net.Sockets;
 
 using GameServer.Scenes;
+using GameServer.Dungeon;
 
 namespace GameServer
 {
@@ -34,6 +35,7 @@ namespace GameServer
             InitializeServerData();
 
             SceneManager.InitializeSceneData();
+            DungeonManager.InitializeDungeonData();
 
             // Initialisation du TCP Listener
             tcpListener = new TcpListener(IPAddress.Any, Port);
@@ -143,7 +145,9 @@ namespace GameServer
                 { (int)ClientPackets.stillAuthenticated, ServerHandle.CheckAuthenticationPlayerAsync },
                 { (int)ClientPackets.redefinedPwd, ServerHandle.GetRedefinedPwd },
                 { (int)ClientPackets.forgotPwd, ServerHandle.GetForgotPwd },
-                 { (int)ClientPackets.forgotPwdRequest, ServerHandle.ForgotPwdClientRequest },
+                { (int)ClientPackets.forgotPwdRequest, ServerHandle.ForgotPwdClientRequest },
+                { (int)ClientPackets.enterDungeon, ServerHandle.PlayerAskEnterDungeon },
+                { (int)ClientPackets.FightPacket, ServerHandle.FightPacketReceieved },
                 //{ (int)ClientPackets.playerMovement, ServerHandle.PlayerMovement },
             };
             Console.WriteLine("Initialized packets.");

@@ -17,7 +17,9 @@ namespace GameServer
         signInStatus,
         signInToken,
         redefinePassword,
-        forgotPwdStatus
+        forgotPwdStatus,
+        spawnEnemyAllCrew,
+        spawnPlayerAllCrew
 
         /*
         playerPosition,
@@ -36,6 +38,8 @@ namespace GameServer
         forgotPwd,
         forgotPwdRequest,
         stillAuthenticated,
+        enterDungeon,
+        FightPacket,
         //playerMovement,
     }
 
@@ -195,6 +199,26 @@ namespace GameServer
             Write(_value.Access_Token);
             Write(_value.Id_Token);
             Write(_value.Refresh_Token);
+        }
+        /// <summary>Adds a Dictionary<int, NeokyCollection> to the packet.</summary>
+        /// <param name="_value">The Vector3 to add.</param>
+        public void Write(Dictionary<int, NeokyCollection> _value)
+        {
+            foreach (var item in _value)
+            {
+                Write(item.Key);
+                Write(item.Value);
+            }
+        }
+        /// <summary>Adds a NeokyCollection to the packet.</summary>
+        /// <param name="_value">The Vector3 to add.</param>
+        public void Write(NeokyCollection _value)
+        {
+            Write(_value.collection_name);
+            Write(_value.collection_prefab);
+            Write(_value.attackDamages);            
+            Write(_value.attackSpeed);
+            Write(_value.lifePoints);
         }
         /// <summary>Adds a Quaternion to the packet.</summary>
         /// <param name="_value">The Quaternion to add.</param>

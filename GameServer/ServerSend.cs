@@ -113,6 +113,31 @@ namespace GameServer
                 SendTCPData(_toClient, _packet);
             }
         }
+       
+        public static void SpawnEnemyAllCrew(int _toClient,int _enemyCount, Dictionary<int, NeokyCollection> _enemyCrew )
+        {
+            using (Packet _packet = new Packet((int)ServerPackets.spawnEnemyAllCrew))
+            {
+                _packet.Write(_toClient);
+                _packet.Write(_enemyCount);
+                _packet.Write(_enemyCrew);
+               
+                SendTCPData(_toClient, _packet);
+            }
+        }
+
+        public static void SpawnPlayerAllCrew(int _toClient, int _crewCount, Dictionary<int, NeokyCollection> _playerCrew)
+        {
+            using (Packet _packet = new Packet((int)ServerPackets.spawnPlayerAllCrew))
+            {
+                _packet.Write(_toClient);
+                _packet.Write(_crewCount);
+                _packet.Write(_playerCrew);
+
+                SendTCPData(_toClient, _packet);
+            }
+        }
+        
 
         /// <summary>Tells a client to spawn a player.</summary>
         /// <param name="_newScene">The validated Scene to switch to</param>

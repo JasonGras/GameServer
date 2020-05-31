@@ -10,6 +10,8 @@ namespace GameServer.Scenes
         public NewScene()
         {
             this.sceneName = "NewScene";
+
+            // List of Scenes wich user can come from to claim access HomePage
             this.oldScenes = new List<string>();
             this.oldScenes.Add("Authentication");
             this.oldScenes.Add("Blabla");
