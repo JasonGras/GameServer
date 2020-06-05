@@ -56,7 +56,7 @@ namespace GameServer
             }
 
         }
-        public static async Task ClientForgotPwdRequest(string _username, string email, int _clientid)
+        public static async Task ClientForgotPwdRequest(string _username,int _clientid)
         {
             using (var cognito = new AmazonCognitoIdentityProviderClient(new AnonymousAWSCredentials(), Constants.REGION))
             {
@@ -74,7 +74,7 @@ namespace GameServer
                     Console.WriteLine("SignInClients.cs | ForgotPasswordAsync Sending");
                     ForgotPasswordResponse = await cognito.ForgotPasswordAsync(ForgotPasswordRequest).ConfigureAwait(false);
                     Console.WriteLine("SignInClients.cs | ForgotPasswordAsync OK");
-                    //ServerSend.ClientForgotPasswordStatus(_clientid, Constants.FORGOT_PASSWORD_CONFIRMED);
+                    ServerSend.ClientForgotPasswordStatus(_clientid, Constants.NEW_CODE_SEND_EMAIL);
                 }
                 catch (ExpiredCodeException ex)
                 {

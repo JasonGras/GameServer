@@ -142,6 +142,32 @@ namespace GameServer
             }
         }
 
+        public static void PlayerAskCollection(int _fromClient, Packet _packet)
+        {
+            // Getting the parameter from Client Packet
+            int _clientIdCheck = _packet.ReadInt();
+            UserSession _currentUserSession = _packet.ReadUserSession();
+
+            if (_fromClient == _clientIdCheck)
+            {
+                //Console.WriteLine($"{Server.clients[_fromClient].tcp.socket.Client.RemoteEndPoint} want to enter Dungeon {_desiredDungeon}.");
+
+
+                //Check if Session is Still Valid
+                if (!Server.clients[_fromClient].myUser.SessionTokens.IsValid())
+                {
+                    //_ = Server.clients[_fromClient].GetNewValidTokensAsync();
+                    Console.WriteLine("UserSession Updated.");
+                }
+                //Server.clients[_fromClient].myUser.StartWithRefreshTokenAuthAsync();
+                // For Valid Sessions, we can go to the desired Scene
+                if (Server.clients[_fromClient].myUser.SessionTokens.IsValid())
+                {
+                    Server.clients[_fromClient].UpdatePlayerCollection(Server.clients[_fromClient].player.client_sub);
+                }
+            }
+        }
+
         public static void PlayerAskEnterDungeon(int _fromClient, Packet _packet)
         {
             // Getting the parameter from Client Packet
@@ -242,12 +268,11 @@ namespace GameServer
             // Getting the parameter from Client Packet ForgotPassword Request Pwd Change
             int _clientIdCheck = _packet.ReadInt();
             string _username = _packet.ReadString();
-            string _email = _packet.ReadString();
 
             if (_fromClient == _clientIdCheck)
             {
                 // Check in DB if Email is Right to improve Random Forget Password Requests
-                await SignInClients.ClientForgotPwdRequest(_username, _email,_fromClient);
+                await SignInClients.ClientForgotPwdRequest(_username,_fromClient);
             }
         }
 

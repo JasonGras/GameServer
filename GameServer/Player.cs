@@ -34,12 +34,18 @@ namespace GameServer
 
         public float level { get; set; }
 
+        public float golds { get; set; }
+
+        public float diams { get; set; }
+
         public float level_xp { get; set; }
 
         public float required_levelup_xp { get; set; }
 
         //[DynamoDBProperty(AttributeName = "PlayerCrew")]
         public Dictionary<string, string> PlayerCrew { get; set; }
+
+        //public List<Dictionary<string, int>> PlayerCollection { get; set; }
 
         public Scene currentScene;
         public Scene unloadScene;

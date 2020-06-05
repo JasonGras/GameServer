@@ -103,6 +103,24 @@ namespace GameServer
             return result.FirstOrDefault();
         }
 
+        public async Task<NeokyPlayerCollection> ScanForPlayerCollectionUsingSub(string _clientSub)
+        {
+            var search = _context.ScanAsync<NeokyPlayerCollection>
+            (
+                new[]
+                {
+                    new ScanCondition
+                    (
+                        nameof(NeokyPlayerCollection.client_sub),
+                        ScanOperator.Equal,
+                        _clientSub
+                    )
+                }
+            );
+            var result = await search.GetRemainingAsync();
+            return result.FirstOrDefault();
+        }
+
         public async Task<NeokyCollection> ScanForNeokyCollectionUsingCollectionID(string _collectionID)
         {
             var search = _context.ScanAsync<NeokyCollection>

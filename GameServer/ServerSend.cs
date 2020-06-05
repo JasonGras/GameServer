@@ -126,6 +126,20 @@ namespace GameServer
             }
         }
 
+        public static void SendPlayerCollection(int _toClient, int _UnitsCount, int _UnitsStatCount, Dictionary<string, Dictionary<string, int>> _playerCollection)
+        {
+            using (Packet _packet = new Packet((int)ServerPackets.getAllPlayerUnits))
+            {
+                _packet.Write(_toClient);
+                _packet.Write(_UnitsCount);
+                _packet.Write(_UnitsStatCount);
+                _packet.Write(_playerCollection);
+
+                SendTCPData(_toClient, _packet);
+            }
+        }
+        
+
         public static void SpawnPlayerAllCrew(int _toClient, int _crewCount, Dictionary<int, NeokyCollection> _playerCrew)
         {
             using (Packet _packet = new Packet((int)ServerPackets.spawnPlayerAllCrew))

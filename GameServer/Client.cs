@@ -17,7 +17,7 @@ using GameServer.Dungeon;
 
 namespace GameServer
 {
-    
+
     class Client
     {
         public static int dataBufferSize = 4096;
@@ -26,18 +26,21 @@ namespace GameServer
         public CognitoUser myUser;
         public UserSession currentUserSession;
         public Player player;
+        public NeokyPlayerCollection playerCollection;
         public TCP tcp;
         public UDP udp;
-        public Dictionary<int,NeokyCollection> ClientCollection;
-        public Dictionary<int,NeokyCollection> EnemyCrew;
-
+        public Dictionary<int, NeokyCollection> PlayerCrew;
+        public Dictionary<int, NeokyCollection> EnemyCrew;
+        public Dictionary<string, Dictionary<string, int>> PlayerCollection;
+        public Dictionary<string, int> UnitsDetails;
+        public int UnitDetailCount; // Permet de savir combien d'éléments il y a dans le Dictionary<string,int> de PlayerCollection
 
         public Client(int _clientId)
         {
             id = _clientId;
             //accessToken = null;
             tcp = new TCP(id);
-            udp = new UDP(id);            
+            udp = new UDP(id);
         }
 
         public class TCP
@@ -231,16 +234,19 @@ namespace GameServer
         /// <param name="_playerName">The username of the new player.</param>
         public void SendIntoGame(string _playerName, string _sceneToUnload)
         {
-            
+
             if (myUser.SessionTokens.IsValid())
             {
                 try
                 {
-                    //Get Player Data From Database
+                    //Get Player Data From Database (Table "clients")
                     var task = Server.dynamoDBServer.ScanForNeokyClientsUsingUsername(_playerName);
+                    var taskPlayerCollection = Server.dynamoDBServer.ScanForPlayerCollectionUsingSub(task.Result.client_sub);
+
 
                     //Set Client Player Data with Database Return
                     player = task.Result;
+                    playerCollection = taskPlayerCollection.Result;
 
                     // Get Table XP from DB and find the required Lvl Up from the Lvl
                     player.required_levelup_xp = player.level * 100; // <= Temporary
@@ -249,15 +255,15 @@ namespace GameServer
                     //player.oldScene = _sceneToUnload;
 
                     // Ask the Client to Spawn the Player
-                    ServerSend.SpawnPlayer(id, player); 
+                    ServerSend.SpawnPlayer(id, player);
                 }
-                catch(Exception e)
+                catch (Exception e)
                 {
                     Console.WriteLine("Client.cs | Client Scan Failed : " + e);
                     NlogClass.target.WriteAsyncLogEvent(new AsyncLogEventInfo(new LogEventInfo(LogLevel.Warn, "SendIntoGame", "Database scan to initialize player failed for  [ Player claimed name : " + _playerName + "]"), NlogClass.exceptions.Add));
                 }
             }
-            
+
 
 
             // Send all players to the new player
@@ -308,6 +314,55 @@ namespace GameServer
             }
         }
 
+        public void UpdatePlayerCollection(string _userSub)
+        {
+            //Dictionary<string, int>  Units = new Dictionary<string, int>();
+            PlayerCollection = new Dictionary<string, Dictionary<string, int>>();
+            
+
+            if (Server.clients[id].playerCollection != null)
+            {
+                
+                // Foreach to Set Up the Enemy Crew
+                try
+                {
+                    //Try Update the Collection Data
+                    var dynamoScanTask = Server.dynamoDBServer.ScanForPlayerCollectionUsingSub(_userSub);                    
+                    foreach (var UnitCollection in dynamoScanTask.Result.PlayerCollection)
+                    {
+                        UnitsDetails = new Dictionary<string, int>();
+                        UnitDetailCount = 0;
+
+                        foreach (var UnitCharacteristic in UnitCollection.Value)
+                        {
+                            UnitDetailCount += 1;
+                            UnitsDetails.Add(UnitCharacteristic.Key, UnitCharacteristic.Value); // 1st Member , Neoky Collection Updated (Id, Stats)       
+                            
+                        }
+                        PlayerCollection.Add(UnitCollection.Key, UnitsDetails);
+                        //UnitsDetails.Clear();
+                        Console.WriteLine("UpdatePlayerCollection | Added New Unit Collection" + UnitCollection.Key);
+                    }
+                    Console.WriteLine("UpdatePlayerCollection | All Unit Collection Added");
+
+                    ServerSend.SendPlayerCollection(id, PlayerCollection.Count, UnitDetailCount, PlayerCollection);
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine("UpdatePlayerCollection | Scan Player Collection Failed");
+                }
+                //ServerSend.SendPlayerCollection(id, PlayerCollection.Count, PlayerCollection);
+            }
+            else
+            {
+                Console.WriteLine("UpdatePlayerCollection | User Player Collection is Null !");
+            }
+        }
+
+
+
+
+
         public void EnterDungeon(string _desiredDungeon)
         {
             Dungeon.Dungeon _dungeonFound = DungeonManager.FindDungeonByName(_desiredDungeon);
@@ -341,7 +396,7 @@ namespace GameServer
 
         public void setFight ()
         {
-            ClientCollection = new Dictionary<int, NeokyCollection>();
+            PlayerCrew = new Dictionary<int, NeokyCollection>();
             EnemyCrew = new Dictionary<int, NeokyCollection>();
 
 
@@ -511,7 +566,7 @@ namespace GameServer
                                 {
                                     //Try Update the Collection Data
                                     var dynamoScanTask = Server.dynamoDBServer.ScanForNeokyCollectionUsingCollectionID(item.Value);
-                                    ClientCollection.Add(1, dynamoScanTask.Result); // 1st Member , Neoky Collection Updated (Id, Stats)
+                                    PlayerCrew.Add(1, dynamoScanTask.Result); // 1st Member , Neoky Collection Updated (Id, Stats)
                                     Console.WriteLine("setFight | Scan Collection Data Success");
                                 }
                                 catch (Exception e)
@@ -533,7 +588,7 @@ namespace GameServer
                                 {
                                     //Try Update the Collection Data
                                     var dynamoScanTask = Server.dynamoDBServer.ScanForNeokyCollectionUsingCollectionID(item.Value);
-                                    ClientCollection.Add(2, dynamoScanTask.Result); // 1st Member , Neoky Collection Updated (Id, Stats)
+                                    PlayerCrew.Add(2, dynamoScanTask.Result); // 1st Member , Neoky Collection Updated (Id, Stats)
                                     Console.WriteLine("setFight | Scan Collection Data Success");
                                 }
                                 catch (Exception e)
@@ -555,7 +610,7 @@ namespace GameServer
                                 {
                                     //Try Update the Collection Data
                                     var dynamoScanTask = Server.dynamoDBServer.ScanForNeokyCollectionUsingCollectionID(item.Value);
-                                    ClientCollection.Add(3, dynamoScanTask.Result); // 1st Member , Neoky Collection Updated (Id, Stats)
+                                    PlayerCrew.Add(3, dynamoScanTask.Result); // 1st Member , Neoky Collection Updated (Id, Stats)
                                     Console.WriteLine("setFight | Scan Collection Data Success");
                                 }
                                 catch (Exception e)
@@ -577,7 +632,7 @@ namespace GameServer
                                 {
                                     //Try Update the Collection Data
                                     var dynamoScanTask = Server.dynamoDBServer.ScanForNeokyCollectionUsingCollectionID(item.Value);
-                                    ClientCollection.Add(4, dynamoScanTask.Result); // 1st Member , Neoky Collection Updated (Id, Stats)
+                                    PlayerCrew.Add(4, dynamoScanTask.Result); // 1st Member , Neoky Collection Updated (Id, Stats)
                                     Console.WriteLine("setFight | Scan Collection Data Success");
                                 }
                                 catch (Exception e)
@@ -599,7 +654,7 @@ namespace GameServer
                                 {
                                     //Try Update the Collection Data
                                     var dynamoScanTask = Server.dynamoDBServer.ScanForNeokyCollectionUsingCollectionID(item.Value);
-                                    ClientCollection.Add(5, dynamoScanTask.Result); // 1st Member , Neoky Collection Updated (Id, Stats)
+                                    PlayerCrew.Add(5, dynamoScanTask.Result); // 1st Member , Neoky Collection Updated (Id, Stats)
                                     Console.WriteLine("setFight | Scan Collection Data Success");
                                 }
                                 catch (Exception e)
@@ -621,7 +676,7 @@ namespace GameServer
                                 {
                                     //Try Update the Collection Data
                                     var dynamoScanTask = Server.dynamoDBServer.ScanForNeokyCollectionUsingCollectionID(item.Value);
-                                    ClientCollection.Add(6, dynamoScanTask.Result); // 1st Member , Neoky Collection Updated (Id, Stats)
+                                    PlayerCrew.Add(6, dynamoScanTask.Result); // 1st Member , Neoky Collection Updated (Id, Stats)
                                     Console.WriteLine("setFight | Scan Collection Data Success");
                                 }
                                 catch (Exception e)
@@ -661,7 +716,7 @@ namespace GameServer
 
 
             ServerSend.SpawnEnemyAllCrew(id, EnemyCrew.Count, EnemyCrew);
-            ServerSend.SpawnPlayerAllCrew(id, ClientCollection.Count, ClientCollection);
+            ServerSend.SpawnPlayerAllCrew(id, PlayerCrew.Count, PlayerCrew);
             // Foreach to send the crew to the player
             /*foreach (var _crewMember in ClientCollection)
             {

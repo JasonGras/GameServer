@@ -148,6 +148,7 @@ namespace GameServer
                 { (int)ClientPackets.forgotPwdRequest, ServerHandle.ForgotPwdClientRequest },
                 { (int)ClientPackets.enterDungeon, ServerHandle.PlayerAskEnterDungeon },
                 { (int)ClientPackets.FightPacket, ServerHandle.FightPacketReceieved },
+                { (int)ClientPackets.updateCollection, ServerHandle.PlayerAskCollection },
                 //{ (int)ClientPackets.playerMovement, ServerHandle.PlayerMovement },
             };
             Console.WriteLine("Initialized packets.");

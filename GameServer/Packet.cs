@@ -19,7 +19,8 @@ namespace GameServer
         redefinePassword,
         forgotPwdStatus,
         spawnEnemyAllCrew,
-        spawnPlayerAllCrew
+        spawnPlayerAllCrew,
+        getAllPlayerUnits
 
         /*
         playerPosition,
@@ -40,6 +41,7 @@ namespace GameServer
         stillAuthenticated,
         enterDungeon,
         FightPacket,
+        updateCollection,
         //playerMovement,
     }
 
@@ -203,6 +205,26 @@ namespace GameServer
         /// <summary>Adds a Dictionary<int, NeokyCollection> to the packet.</summary>
         /// <param name="_value">The Vector3 to add.</param>
         public void Write(Dictionary<int, NeokyCollection> _value)
+        {
+            foreach (var item in _value)
+            {
+                Write(item.Key);
+                Write(item.Value);
+            }
+        }
+        /// <summary>Adds a Dictionary<int, NeokyCollection> to the packet.</summary>
+        /// <param name="_value">The Vector3 to add.</param>
+        public void Write(Dictionary<string,Dictionary<string, int>> _value)
+        {
+            foreach (var item in _value)
+            {
+                Write(item.Key);
+                Write(item.Value);
+            }
+        }
+        /// <summary>Adds a Dictionary<int, NeokyCollection> to the packet.</summary>
+        /// <param name="_value">The Vector3 to add.</param>
+        public void Write(Dictionary<string, int> _value)
         {
             foreach (var item in _value)
             {
@@ -397,7 +419,7 @@ namespace GameServer
             }
             catch (Exception e)
             {
-                throw new Exception("Could not read value of type 'bool'!");
+                throw new Exception("Could not read value of type 'bool'!"+e);
                 //Console.WriteLine("Could not read value of type 'string'!");
                  //return "READ_STRING_KO";
             }
