@@ -126,7 +126,7 @@ namespace GameServer
             }
         }
 
-        public static void SendPlayerCollection(int _toClient, int _UnitsCount, int _UnitsStatCount, Dictionary<string, Dictionary<string, int>> _playerCollection)
+        public static void SendPlayerCollection(int _toClient, int _UnitsCount, int _UnitsStatCount, Dictionary<NeokyCollection, Dictionary<string, int>> _playerCollection)
         {
             using (Packet _packet = new Packet((int)ServerPackets.getAllPlayerUnits))
             {

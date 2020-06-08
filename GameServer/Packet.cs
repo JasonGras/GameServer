@@ -214,7 +214,7 @@ namespace GameServer
         }
         /// <summary>Adds a Dictionary<int, NeokyCollection> to the packet.</summary>
         /// <param name="_value">The Vector3 to add.</param>
-        public void Write(Dictionary<string,Dictionary<string, int>> _value)
+        public void Write(Dictionary<NeokyCollection,Dictionary<string, int>> _value)
         {
             foreach (var item in _value)
             {
@@ -238,6 +238,7 @@ namespace GameServer
         {
             Write(_value.collection_name);
             Write(_value.collection_prefab);
+            Write(_value.collection_image);
             Write(_value.attackDamages);            
             Write(_value.attackSpeed);
             Write(_value.lifePoints);

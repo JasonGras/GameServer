@@ -31,11 +31,10 @@ namespace GameServer.Dungeon.Dungeon_01
 
             DJ_01_01.sceneName = "DJ_01_01";
             DJ_01_01.enemyCrewMember = new Dictionary<int, NeokyCollection>();
-            DJ_01_01.enemyCrewMember.Add(1, new NeokyCollection { collection_id = "sphere_id", collection_name = "Sphere", attackDamages = 5, attackSpeed = 20, collection_prefab = "sphere_prefab", lifePoints = 500 });
-            DJ_01_01.enemyCrewMember.Add(2, new NeokyCollection { collection_id = "sphere_id", collection_name = "Sphere", attackDamages = 5, attackSpeed = 20, collection_prefab = "sphere_prefab", lifePoints = 500 });
-            DJ_01_01.enemyCrewMember.Add(3, new NeokyCollection { collection_id = "sphere_id", collection_name = "Sphere", attackDamages = 5, attackSpeed = 20, collection_prefab = "sphere_prefab", lifePoints = 500 });
-            DJ_01_01.enemyCrewMember.Add(4, new NeokyCollection { collection_id = "sphere_id", collection_name = "Sphere", attackDamages = 5, attackSpeed = 20, collection_prefab = "sphere_prefab", lifePoints = 500 });
-            DJ_01_01.enemyCrewMember.Add(5, new NeokyCollection { collection_id = "sphere_id", collection_name = "Sphere", attackDamages = 5, attackSpeed = 20, collection_prefab = "sphere_prefab", lifePoints = 500 });
+            DJ_01_01.enemyCrewMember.Add(1, new NeokyCollection { collection_id = "arthur_id", collection_name = "Arthur", attackDamages = 5, attackSpeed = 20, collection_prefab = "arthur_01", lifePoints = 500 });
+            DJ_01_01.enemyCrewMember.Add(2, new NeokyCollection { collection_id = "arthur_id", collection_name = "Arthur", attackDamages = 5, attackSpeed = 20, collection_prefab = "arthur_01", lifePoints = 500 });
+            DJ_01_01.enemyCrewMember.Add(3, new NeokyCollection { collection_id = "arthur_id", collection_name = "Arthur", attackDamages = 5, attackSpeed = 20, collection_prefab = "arthur_01", lifePoints = 500 });
+            DJ_01_01.enemyCrewMember.Add(4, new NeokyCollection { collection_id = "arthur_id", collection_name = "Arthur", attackDamages = 5, attackSpeed = 20, collection_prefab = "arthur_01", lifePoints = 500 });
             dungeonWaves.Add(DJ_01_01.sceneName, DJ_01_01.enemyCrewMember);
             DJ_01_01.oldScenes = new List<string>();
             DJ_01_01.oldScenes.Add("HomePage"); // Seems to be accessible from HomePage

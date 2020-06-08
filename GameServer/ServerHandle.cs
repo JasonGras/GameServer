@@ -223,6 +223,10 @@ namespace GameServer
                             // Check if player is in right to Init a fight
                             Server.clients[_fromClient].setFight();
                             break;
+                        case "FIGHT_READY":
+                            // Check if player is in right to Init a fight
+                            //Server.clients[_fromClient].setFight();
+                            break;
 
                         default:
                             Console.WriteLine("Unkown Fight Packet Recieved.");

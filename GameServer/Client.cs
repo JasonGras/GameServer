@@ -31,7 +31,7 @@ namespace GameServer
         public UDP udp;
         public Dictionary<int, NeokyCollection> PlayerCrew;
         public Dictionary<int, NeokyCollection> EnemyCrew;
-        public Dictionary<string, Dictionary<string, int>> PlayerCollection;
+        public Dictionary<NeokyCollection, Dictionary<string, int>> PlayerCollection;
         public Dictionary<string, int> UnitsDetails;
         public int UnitDetailCount; // Permet de savir combien d'éléments il y a dans le Dictionary<string,int> de PlayerCollection
 
@@ -317,7 +317,7 @@ namespace GameServer
         public void UpdatePlayerCollection(string _userSub)
         {
             //Dictionary<string, int>  Units = new Dictionary<string, int>();
-            PlayerCollection = new Dictionary<string, Dictionary<string, int>>();
+            PlayerCollection = new Dictionary<NeokyCollection, Dictionary<string, int>>();
             
 
             if (Server.clients[id].playerCollection != null)
@@ -326,6 +326,7 @@ namespace GameServer
                 // Foreach to Set Up the Enemy Crew
                 try
                 {
+                    
                     //Try Update the Collection Data
                     var dynamoScanTask = Server.dynamoDBServer.ScanForPlayerCollectionUsingSub(_userSub);                    
                     foreach (var UnitCollection in dynamoScanTask.Result.PlayerCollection)
@@ -333,13 +334,25 @@ namespace GameServer
                         UnitsDetails = new Dictionary<string, int>();
                         UnitDetailCount = 0;
 
-                        foreach (var UnitCharacteristic in UnitCollection.Value)
+                        try
                         {
-                            UnitDetailCount += 1;
-                            UnitsDetails.Add(UnitCharacteristic.Key, UnitCharacteristic.Value); // 1st Member , Neoky Collection Updated (Id, Stats)       
+                            //Try Update the Collection Data
+                            var dynamoScanTsk = Server.dynamoDBServer.ScanForNeokyCollectionUsingCollectionID(UnitCollection.Key);    
+
+                            foreach (var UnitCharacteristic in UnitCollection.Value)
+                            {
+                                UnitDetailCount += 1;
+                                UnitsDetails.Add(UnitCharacteristic.Key, UnitCharacteristic.Value); // 1st Member , Neoky Collection Updated (Id, Stats)       
                             
+                            }
+
+                            PlayerCollection.Add(dynamoScanTsk.Result, UnitsDetails);
                         }
-                        PlayerCollection.Add(UnitCollection.Key, UnitsDetails);
+                        catch (Exception e)
+                        {
+                            Console.WriteLine("UpdatePlayerCollection | Scan NeokyCollection Failed");
+                            throw;
+                        }
                         //UnitsDetails.Clear();
                         Console.WriteLine("UpdatePlayerCollection | Added New Unit Collection" + UnitCollection.Key);
                     }
