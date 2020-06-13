@@ -107,6 +107,10 @@ namespace GameServer
                 _packet.Write(_player.required_levelup_xp);
                 _packet.Write(_player.currentScene.sceneName);
                 _packet.Write(_player.unloadScene.sceneName);
+                _packet.Write(_player.golds);
+                _packet.Write(_player.box.Count);
+                _packet.Write(_player.box);
+                _packet.Write(_player.diams);
                 //_packet.Write(_player.);
                 //_packet.Write(_player.rotation);
 
@@ -151,7 +155,19 @@ namespace GameServer
                 SendTCPData(_toClient, _packet);
             }
         }
-        
+
+        public static void AttackUnit(int _toClient, int _UnitPlayer, int _EnemyPlayer)
+        {
+            using (Packet _packet = new Packet((int)ServerPackets.callbackAttackPacket))
+            {
+                _packet.Write(_toClient);
+                _packet.Write(_UnitPlayer);
+                _packet.Write(_EnemyPlayer);
+
+                SendTCPData(_toClient, _packet);
+            }
+        }
+
 
         /// <summary>Tells a client to spawn a player.</summary>
         /// <param name="_newScene">The validated Scene to switch to</param>

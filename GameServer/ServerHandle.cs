@@ -19,15 +19,19 @@ namespace GameServer
 
         public static void WelcomeReceived(int _fromClient, Packet _packet)
         {
-            int _clientIdCheck = _packet.ReadInt();
-            //string _username = _packet.ReadString();
-
-            Console.WriteLine($"{Server.clients[_fromClient].tcp.socket.Client.RemoteEndPoint} connected successfully and is now player {_fromClient}.");
-            if (_fromClient != _clientIdCheck)
+            try
             {
-                Console.WriteLine($"Player (ID: {_fromClient}) has assumed the wrong client ID ({_clientIdCheck})!");
+                int _clientIdCheck = _packet.ReadInt();
+
+                Console.WriteLine($"{Server.clients[_fromClient].tcp.socket.Client.RemoteEndPoint} connected successfully and is now player {_fromClient}.");
+                if (_fromClient != _clientIdCheck)
+                {
+                    Console.WriteLine($"Player (ID: {_fromClient}) has assumed the wrong client ID ({_clientIdCheck})!");
+                }
+            }catch(Exception e)
+            {
+                NlogClass.target.WriteAsyncLogEvent(new AsyncLogEventInfo(new LogEventInfo(LogLevel.Error, "WelcomeReceived",  "Client Username : "+ Server.clients[_fromClient].myUser.Username + " | Read the Packet failed | Exception : " + e ), NlogClass.exceptions.Add));
             }
-            //Server.clients[_fromClient].SendIntoGame();
         }
 
         public async static void CheckAuthenticationPlayerAsync(int _fromClient, Packet _packet)
@@ -97,7 +101,7 @@ namespace GameServer
             }
         }
 
-        
+
 
         /*private static bool isRefreshTokenOfClaimedID(string _refreshToken,int _clientIdCheck)
         {
@@ -111,235 +115,291 @@ namespace GameServer
             }
         }*/
 
+        /// <summary>Function handling "switchScene" Packets from Client</summary>
+        /// <param name="_desiredScene">Desired Scene Name recieved from the Client.</param>
+        /// <param name="_currentUserSession">The Client SessionTokens, permit to check if he is still Authenticated</param>
+        /// UPDATED 13/06/2020
         public static void DesiredPlayerScene(int _fromClient, Packet _packet)
         {
-            // Getting the parameter from Client Packet
-            int _clientIdCheck = _packet.ReadInt();
-            UserSession _currentUserSession = _packet.ReadUserSession();
-            string _desiredscene = _packet.ReadString();
-
-            if (_fromClient == _clientIdCheck)
+            try
             {
-                Console.WriteLine($"{Server.clients[_fromClient].tcp.socket.Client.RemoteEndPoint} want to switch to {_desiredscene}.");
-            
-                // Check if Tokens are related to the Client (Id = Username on tokens)
-                //Server.clients[_fromClient].myUser.SessionTokens.IdToken = _currentUserSession.Id_Token;
-                //Server.clients[_fromClient].myUser.SessionTokens.AccessToken = _currentUserSession.Access_Token;
-                //Server.clients[_fromClient].myUser.SessionTokens.RefreshToken = _currentUserSession.Refresh_Token;
+                // Getting the parameter from Client Packet
+                int _clientIdCheck = _packet.ReadInt();
+                UserSession _currentUserSession = _packet.ReadUserSession();
+                string _desiredscene = _packet.ReadString();
 
-                //Check if Session is Still Valid
-                if (!Server.clients[_fromClient].myUser.SessionTokens.IsValid())
+                if (_fromClient == _clientIdCheck)
                 {
-                    //_ = Server.clients[_fromClient].GetNewValidTokensAsync();
-                    Console.WriteLine("UserSession Updated.");
+                    if (Server.clients[_fromClient].CheckSessionClaimedByUser(_currentUserSession)) // The Session Claimed Should be the Same of the Session Claimed
+                    {
+                        Console.WriteLine($"{Server.clients[_fromClient].tcp.socket.Client.RemoteEndPoint} want to switch to {_desiredscene}.");
+                        Server.clients[_fromClient].SwitchScene(_desiredscene, _currentUserSession);
+                    }
+                    else
+                    {
+                        NlogClass.target.WriteAsyncLogEvent(new AsyncLogEventInfo(new LogEventInfo(LogLevel.Error, "DesiredPlayerScene", "Client Username : " + Server.clients[_fromClient].myUser.Username + " | RefreshToken claimed is not in Client SessionTokens"), NlogClass.exceptions.Add));
+                    }
                 }
-                //Server.clients[_fromClient].myUser.StartWithRefreshTokenAuthAsync();
-                // For Valid Sessions, we can go to the desired Scene
-                if (Server.clients[_fromClient].myUser.SessionTokens.IsValid())
-                {
-                    Server.clients[_fromClient].SwitchScene(_desiredscene);
-                }
+            }catch(Exception e)
+            {
+                NlogClass.target.WriteAsyncLogEvent(new AsyncLogEventInfo(new LogEventInfo(LogLevel.Error, "DesiredPlayerScene",  "Client Username : "+ Server.clients[_fromClient].myUser.Username + " | Read the Packet failed | Exception : " + e ), NlogClass.exceptions.Add));
             }
         }
 
+        /// <summary>Function Handling "updateCollection" Packets from Client</summary>
+        /// <param name="_currentUserSession">The Client SessionTokens, permit to check if he is still Authenticated</param>
+        /// UPDATED 13/06/2020
         public static void PlayerAskCollection(int _fromClient, Packet _packet)
         {
-            // Getting the parameter from Client Packet
-            int _clientIdCheck = _packet.ReadInt();
-            UserSession _currentUserSession = _packet.ReadUserSession();
-
-            if (_fromClient == _clientIdCheck)
+            try
             {
-                //Console.WriteLine($"{Server.clients[_fromClient].tcp.socket.Client.RemoteEndPoint} want to enter Dungeon {_desiredDungeon}.");
+                // Getting the parameter from Client Packet
+                int _clientIdCheck = _packet.ReadInt();
+                UserSession _currentUserSession = _packet.ReadUserSession();
 
-
-                //Check if Session is Still Valid
-                if (!Server.clients[_fromClient].myUser.SessionTokens.IsValid())
+                if (_fromClient == _clientIdCheck) // The client ID claimed shoud be equal to the Client ID Observed
                 {
-                    //_ = Server.clients[_fromClient].GetNewValidTokensAsync();
-                    Console.WriteLine("UserSession Updated.");
+                    if (Server.clients[_fromClient].CheckSessionClaimedByUser(_currentUserSession)) // The Session Claimed Should be the Same of the Session Claimed
+                    {
+                        Server.clients[_fromClient].UpdatePlayerCollection(_currentUserSession);
+                    }
+                    else
+                    {
+                        NlogClass.target.WriteAsyncLogEvent(new AsyncLogEventInfo(new LogEventInfo(LogLevel.Error, "PlayerAskCollection", "Client Username : " + Server.clients[_fromClient].myUser.Username + " | RefreshToken claimed is not in Client SessionTokens"), NlogClass.exceptions.Add));
+                    }
                 }
-                //Server.clients[_fromClient].myUser.StartWithRefreshTokenAuthAsync();
-                // For Valid Sessions, we can go to the desired Scene
-                if (Server.clients[_fromClient].myUser.SessionTokens.IsValid())
+                else
                 {
-                    Server.clients[_fromClient].UpdatePlayerCollection(Server.clients[_fromClient].player.client_sub);
+                    NlogClass.target.WriteAsyncLogEvent(new AsyncLogEventInfo(new LogEventInfo(LogLevel.Error, "PlayerAskCollection", "Claimed client : " + Server.clients[_fromClient].myUser.Username + " | _fromClient : ["+ _fromClient + "] is not equal to _clientIdCheck: ["+ _clientIdCheck + "]"), NlogClass.exceptions.Add));
                 }
+            }
+            catch (Exception e)
+            {
+                NlogClass.target.WriteAsyncLogEvent(new AsyncLogEventInfo(new LogEventInfo(LogLevel.Error, "PlayerAskCollection", "Claimed client : " + Server.clients[_fromClient].myUser.Username + " | Read the Packet failed | Exception : " + e ), NlogClass.exceptions.Add));
             }
         }
 
         public static void PlayerAskEnterDungeon(int _fromClient, Packet _packet)
         {
-            // Getting the parameter from Client Packet
-            int _clientIdCheck = _packet.ReadInt();
-            UserSession _currentUserSession = _packet.ReadUserSession();
-            string _desiredDungeon = _packet.ReadString();
-
-            if (_fromClient == _clientIdCheck)
+            try
             {
-                Console.WriteLine($"{Server.clients[_fromClient].tcp.socket.Client.RemoteEndPoint} want to enter Dungeon {_desiredDungeon}.");
+                // Getting the parameter from Client Packet
+                int _clientIdCheck = _packet.ReadInt();
+                UserSession _currentUserSession = _packet.ReadUserSession();
+                string _desiredDungeon = _packet.ReadString();
 
-               
-                //Check if Session is Still Valid
-                if (!Server.clients[_fromClient].myUser.SessionTokens.IsValid())
+                if (_fromClient == _clientIdCheck)
                 {
-                    //_ = Server.clients[_fromClient].GetNewValidTokensAsync();
-                    Console.WriteLine("UserSession Updated.");
+                    Server.clients[_fromClient].EnterDungeon(_currentUserSession,_desiredDungeon);
                 }
-                //Server.clients[_fromClient].myUser.StartWithRefreshTokenAuthAsync();
-                // For Valid Sessions, we can go to the desired Scene
-                if (Server.clients[_fromClient].myUser.SessionTokens.IsValid())
+            }
+            catch (Exception e)
+            {
+                NlogClass.target.WriteAsyncLogEvent(new AsyncLogEventInfo(new LogEventInfo(LogLevel.Error, "PlayerAskEnterDungeon",  "Client Username : "+ Server.clients[_fromClient].myUser.Username + " | Read the Packet failed | Exception : " + e ), NlogClass.exceptions.Add));
+            }
+        }
+
+        public static void AttackPacketReceieved(int _fromClient, Packet _packet)
+        {
+            try
+            {
+                // Getting the parameter from Client Packet
+                int _clientIdCheck = _packet.ReadInt();
+                UserSession _currentUserSession = _packet.ReadUserSession();
+                int _UserUnitNumber = _packet.ReadInt();
+                int _EnemyUnitNumber = _packet.ReadInt();
+
+
+                if (_fromClient == _clientIdCheck)
                 {
-                    Server.clients[_fromClient].EnterDungeon(_desiredDungeon);
+                    Server.clients[_fromClient].UnitAttack(_currentUserSession,_UserUnitNumber, _EnemyUnitNumber);
                 }
+            }
+            catch (Exception e)
+            {
+                NlogClass.target.WriteAsyncLogEvent(new AsyncLogEventInfo(new LogEventInfo(LogLevel.Error, "AttackPacketReceieved", "Client Username : "+ Server.clients[_fromClient].myUser.Username + " | Read the Packet failed | Exception : " + e ) , NlogClass.exceptions.Add));
             }
         }
 
         public static void FightPacketReceieved(int _fromClient, Packet _packet)
         {
-            // Getting the parameter from Client Packet
-            int _clientIdCheck = _packet.ReadInt();
-            UserSession _currentUserSession = _packet.ReadUserSession();
-            string _fightRequest = _packet.ReadString();
-
-            if (_fromClient == _clientIdCheck)
+            try
             {
-                Console.WriteLine($"{Server.clients[_fromClient].tcp.socket.Client.RemoteEndPoint} request with FIGHT Packets : {_fightRequest}.");
+                // Getting the parameter from Client Packet
+                int _clientIdCheck = _packet.ReadInt();
+                UserSession _currentUserSession = _packet.ReadUserSession();
+                string _fightRequest = _packet.ReadString();
+
+                if (_fromClient == _clientIdCheck)
+                {
+                    Console.WriteLine($"{Server.clients[_fromClient].tcp.socket.Client.RemoteEndPoint} request with FIGHT Packets : {_fightRequest}.");
 
 
-                //Check if Session is Still Valid
-                if (!Server.clients[_fromClient].myUser.SessionTokens.IsValid())
-                {
-                    //_ = Server.clients[_fromClient].GetNewValidTokensAsync();
-                    Console.WriteLine("UserSession Updated.");
-                }
-                //Server.clients[_fromClient].myUser.StartWithRefreshTokenAuthAsync();
-                // For Valid Sessions, we can go to the desired Scene
-                if (Server.clients[_fromClient].myUser.SessionTokens.IsValid())
-                {
-                    switch (_fightRequest)
+                    //Check if Session is Still Valid
+                    if (!Server.clients[_fromClient].myUser.SessionTokens.IsValid())
                     {
-                        case "INIT_FIGHT":
-                            // Check if player is in right to Init a fight
-                            Server.clients[_fromClient].setFight();
-                            break;
-                        case "FIGHT_READY":
-                            // Check if player is in right to Init a fight
-                            //Server.clients[_fromClient].setFight();
-                            break;
-
-                        default:
-                            Console.WriteLine("Unkown Fight Packet Recieved.");
-                            break;
+                        //_ = Server.clients[_fromClient].GetNewValidTokensAsync();
+                        Console.WriteLine("UserSession Updated.");
                     }
+                    //Server.clients[_fromClient].myUser.StartWithRefreshTokenAuthAsync();
+                    // For Valid Sessions, we can go to the desired Scene
+                    if (Server.clients[_fromClient].myUser.SessionTokens.IsValid())
+                    {
+                        switch (_fightRequest)
+                        {
+                            case "INIT_FIGHT":
+                                // Check if player is in right to Init a fight
+                                Server.clients[_fromClient].setPlayerFight(_currentUserSession);
+                                break;
+                            case "FIGHT_READY":
+                                // Check if player is in right to Init a fight
+                                //Server.clients[_fromClient].setFight();
+                                break;
+
+                            default:
+                                Console.WriteLine("Unkown Fight Packet Recieved.");
+                                break;
+                        }
 
 
 
-                    
+
+                    }
                 }
+            }
+            catch (Exception e)
+            {
+                NlogClass.target.WriteAsyncLogEvent(new AsyncLogEventInfo(new LogEventInfo(LogLevel.Error, "FightPacketReceieved",  "Client Username : "+ Server.clients[_fromClient].myUser.Username + " | Read the Packet failed | Exception : " + e ), NlogClass.exceptions.Add));
             }
         }
 
         public async static void GetRedefinedPwd(int _fromClient, Packet _packet)
         {
-            // Getting the parameter from Client Packet
-            int _clientIdCheck = _packet.ReadInt();
-            string _username = _packet.ReadString();
-            string _currentPwd = _packet.ReadString();
-            string _newPwd = _packet.ReadString();
-
-            if (_fromClient == _clientIdCheck)
+            try
             {
-                await SignInClients.PwdRedefinedAuthentication(_username, _currentPwd, _fromClient, _newPwd);
+                // Getting the parameter from Client Packet
+                int _clientIdCheck = _packet.ReadInt();
+                string _username = _packet.ReadString();
+                string _currentPwd = _packet.ReadString();
+                string _newPwd = _packet.ReadString();
+
+                if (_fromClient == _clientIdCheck)
+                {
+                    await SignInClients.PwdRedefinedAuthentication(_username, _currentPwd, _fromClient, _newPwd);
+                }
+            }
+            catch (Exception e)
+            {
+                NlogClass.target.WriteAsyncLogEvent(new AsyncLogEventInfo(new LogEventInfo(LogLevel.Error, "GetRedefinedPwd",  "Client Username : "+ Server.clients[_fromClient].myUser.Username + " | Read the Packet failed | Exception : " + e ), NlogClass.exceptions.Add));
             }
         }
         public async static void GetForgotPwd(int _fromClient, Packet _packet)
         {
-            // Getting the parameter from Client Packet ForgotPassword Request Pwd Change
-            int _clientIdCheck = _packet.ReadInt();
-            string _username = _packet.ReadString();
-            string _code = _packet.ReadString();
-            string _newPwd = _packet.ReadString();
-
-            if (_fromClient == _clientIdCheck)
+            try
             {
-                await SignInClients.ResetPwdForgot(_username, _code, _fromClient, _newPwd);
+                // Getting the parameter from Client Packet ForgotPassword Request Pwd Change
+                int _clientIdCheck = _packet.ReadInt();
+                string _username = _packet.ReadString();
+                string _code = _packet.ReadString();
+                string _newPwd = _packet.ReadString();
+
+                if (_fromClient == _clientIdCheck)
+                {
+                    await SignInClients.ResetPwdForgot(_username, _code, _fromClient, _newPwd);
+                }
+            }
+            catch (Exception e)
+            {
+                NlogClass.target.WriteAsyncLogEvent(new AsyncLogEventInfo(new LogEventInfo(LogLevel.Error, "GetForgotPwd",  "Client Username : "+ Server.clients[_fromClient].myUser.Username + " | Read the Packet failed | Exception : " + e ), NlogClass.exceptions.Add));
             }
         }
 
         public async static void ForgotPwdClientRequest(int _fromClient, Packet _packet)
         {
-            // Getting the parameter from Client Packet ForgotPassword Request Pwd Change
-            int _clientIdCheck = _packet.ReadInt();
-            string _username = _packet.ReadString();
-
-            if (_fromClient == _clientIdCheck)
+            try
             {
-                // Check in DB if Email is Right to improve Random Forget Password Requests
-                await SignInClients.ClientForgotPwdRequest(_username,_fromClient);
+                // Getting the parameter from Client Packet ForgotPassword Request Pwd Change
+                int _clientIdCheck = _packet.ReadInt();
+                string _username = _packet.ReadString();
+
+                if (_fromClient == _clientIdCheck)
+                {
+                    // Check in DB if Email is Right to improve Random Forget Password Requests
+                    await SignInClients.ClientForgotPwdRequest(_username, _fromClient);
+                }
             }
-        }
-
-        public async static void SignUpClientRequest(int _fromClient, Packet _packet)
-        {
-            // Getting the parameter from Client Packet
-            int _clientIdCheck = _packet.ReadInt();
-            string _username = _packet.ReadString();
-            string _password = _packet.ReadString();
-            string _email = _packet.ReadString();
-
-            if (_fromClient == _clientIdCheck)
+            catch (Exception e)
             {
-                Server.clients[_fromClient].SignUptoCognito(_username, _password, _email);
-            }
-            //string _signUpReturn = await SignUpClients.SignUpClientToCognito(_username, _password, _email, Constants.CLIENTAPP_ID);
-            //Console.WriteLine($"{Server.clients[_fromClient].tcp.socket.Client.RemoteEndPoint} want to switch to {_desiredscene}.");
-            /*SignUpClients Sign = new SignUpClients();
-            Sign.*/
-            //Server.clients[_fromClient].SwitchScene(_desiredscene);
-        }
-
-        public async static void SignIpClientRequest(int _fromClient, Packet _packet)
-        {
-            int _clientIdCheck = _packet.ReadInt();
-            string _username = _packet.ReadString();
-            string _password = _packet.ReadString();
-
-            if (_fromClient == _clientIdCheck)
-            {                
-                Server.clients[_fromClient].SignInToCognito(_username, _password);
+                NlogClass.target.WriteAsyncLogEvent(new AsyncLogEventInfo(new LogEventInfo(LogLevel.Error, "ForgotPwdClientRequest",  "Client Username : "+ Server.clients[_fromClient].myUser.Username + " | Read the Packet failed | Exception : " + e ), NlogClass.exceptions.Add));
             }
         }
 
-        public async static void AccessHomePageClientRequest(int _fromClient, Packet _packet)
+        /// <summary>Check if the UserSession is Valid, if Not Renew Tokens </summary>
+        /// <param name="_clientIdCheck">The Client Claimed Client ID</param>
+        /// <param name="_username">The Client Claimed User Name</param>
+        /// <param name="_password">The Client Claimed User Password</param>
+        /// <param name="_email">The Client Claimed User Email</param>
+        /// UPDATED 13/06/2020
+        public static void SignUpClientRequest(int _fromClient, Packet _packet)
         {
-            int _clientIdCheck = _packet.ReadInt();
-            string _clientToken = _packet.ReadString();
-
-            if (_fromClient == _clientIdCheck)
+            try
             {
-                //Server.clients[_fromClient].AccessHomepage(_clientToken);
+
+                // Getting the parameter from Client Packet
+                int _clientIdCheck = _packet.ReadInt();
+                string _username = _packet.ReadString();
+                string _password = _packet.ReadString();
+                string _email = _packet.ReadString();
+
+                if (_fromClient == _clientIdCheck)
+                {
+                    //Server.clients[_fromClient].SignUptoCognito(_username, _password, _email);
+                    SignUpClients NewSignUp = new SignUpClients();
+                    NewSignUp.SignUptoCognito(_clientIdCheck, _username, _password, _email);
+                }
             }
-        }
-
-
-        /*public static void PlayerMovement(int _fromClient, Packet _packet)
-        {
-            bool[] _inputs = new bool[_packet.ReadInt()];
-            for (int i = 0; i < _inputs.Length; i++)
+            catch (Exception e)
             {
-                _inputs[i] = _packet.ReadBool();
+                NlogClass.target.WriteAsyncLogEvent(new AsyncLogEventInfo(new LogEventInfo(LogLevel.Error, "SignUpClientRequest",  "Client Username : "+ Server.clients[_fromClient].myUser.Username + " | Read the Packet failed | Exception : " + e ), NlogClass.exceptions.Add));
             }
-            Quaternion _rotation = _packet.ReadQuaternion();
-
-            Server.clients[_fromClient].player.SetInput(_inputs, _rotation);
         }
 
-        public static void PlayerShoot(int _fromClient, Packet _packet)
+        public static void SignIpClientRequest(int _fromClient, Packet _packet)
         {
-            Vector3 _playerShoot = _packet.ReadVector3();
+            try
+            {
 
-            //Server.clients[_fromClient].WantToShoot(_playerShoot);
-        }*/
+                int _clientIdCheck = _packet.ReadInt();
+                string _username = _packet.ReadString();
+                string _password = _packet.ReadString();
+
+                if (_fromClient == _clientIdCheck)
+                {
+                    Server.clients[_fromClient].SignInToCognito(_username, _password);
+                }
+            }
+            catch (Exception e)
+            {
+                NlogClass.target.WriteAsyncLogEvent(new AsyncLogEventInfo(new LogEventInfo(LogLevel.Error, "SignIpClientRequest",  "Client Username : "+ Server.clients[_fromClient].myUser.Username + " | Read the Packet failed | Exception : " + e ), NlogClass.exceptions.Add));
+            }
+        }
+
+        public static void AccessHomePageClientRequest(int _fromClient, Packet _packet)
+        {
+            try
+            {
+                int _clientIdCheck = _packet.ReadInt();
+                string _clientToken = _packet.ReadString();
+
+                if (_fromClient == _clientIdCheck)
+                {
+                    //Server.clients[_fromClient].AccessHomepage(_clientToken);
+                }
+            }
+            catch (Exception e)
+            {
+                NlogClass.target.WriteAsyncLogEvent(new AsyncLogEventInfo(new LogEventInfo(LogLevel.Error, "AccessHomePageClientRequest",  "Client Username : "+ Server.clients[_fromClient].myUser.Username + " | Read the Packet failed | Exception : " + e ), NlogClass.exceptions.Add));
+            }
+        }
     }
 }

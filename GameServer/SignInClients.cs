@@ -76,10 +76,10 @@ namespace GameServer
                     Console.WriteLine("SignInClients.cs | ForgotPasswordAsync OK");
                     ServerSend.ClientForgotPasswordStatus(_clientid, Constants.NEW_CODE_SEND_EMAIL);
                 }
-                catch (ExpiredCodeException ex)
+                catch (ExpiredCodeException)
                 {
                     // Username Unknown or Code Expired
-                    //ServerSend.ClientForgotPasswordStatus(_clientid, Constants.FORGOT_PASSWORD_CODE_EXPIRED_KO);
+                    ServerSend.ClientForgotPasswordStatus(_clientid, Constants.FORGOT_PASSWORD_CODE_EXPIRED_KO);
                 }
                 catch (Exception e)
                 {
@@ -117,12 +117,12 @@ namespace GameServer
                     confirmForgotPasswordResponse = await cognito.ConfirmForgotPasswordAsync(confirmForgotPasswordRequest).ConfigureAwait(false);
                     ServerSend.ClientForgotPasswordStatus(_clientid, Constants.FORGOT_PASSWORD_CONFIRMED);
                 }
-                catch (CodeMismatchException ex)
+                catch (CodeMismatchException)
                 {
                     // Username Unknown or Code Expired
                     ServerSend.ClientForgotPasswordStatus(_clientid, Constants.FORGOT_PASSWORD_CODE_MISMATCH_KO);
                 }
-                catch (ExpiredCodeException ex)
+                catch (ExpiredCodeException)
                 {
                     // Username Unknown or Code Expired
                     ServerSend.ClientForgotPasswordStatus(_clientid, Constants.FORGOT_PASSWORD_CODE_EXPIRED_KO);

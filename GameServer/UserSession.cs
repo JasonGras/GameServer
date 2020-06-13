@@ -16,5 +16,6 @@ namespace GameServer
         public string Id_Token { get; set; }
         public string Access_Token { get; set; }
         public string Refresh_Token { get; set; }
+
     }
 }

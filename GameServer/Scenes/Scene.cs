@@ -9,7 +9,7 @@ namespace GameServer.Scenes
         public string sceneName { get; set; }
 
         // List of Scenes wich user can come from to claim access HomePage
-        public new List<string> oldScenes { get; set; }
+        public List<string> oldScenes { get; set; }
 
         public Dictionary<int, NeokyCollection> enemyCrewMember { get; set; }
 

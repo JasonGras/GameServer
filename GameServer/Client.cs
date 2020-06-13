@@ -13,7 +13,11 @@ using Amazon.Runtime;
 using GameServer.Scenes;
 using NLog;
 using NLog.Common;
+
 using GameServer.Dungeon;
+
+using System.ComponentModel.DataAnnotations;
+using Amazon.CognitoIdentityProvider.Model;
 
 namespace GameServer
 {
@@ -26,14 +30,13 @@ namespace GameServer
         public CognitoUser myUser;
         public UserSession currentUserSession;
         public Player player;
-        public NeokyPlayerCollection playerCollection;
+
         public TCP tcp;
         public UDP udp;
-        public Dictionary<int, NeokyCollection> PlayerCrew;
-        public Dictionary<int, NeokyCollection> EnemyCrew;
-        public Dictionary<NeokyCollection, Dictionary<string, int>> PlayerCollection;
+
+        public Dictionary<NeokyCollection, Dictionary<string, int>> PlayerCollection; // Detailed Unit Collection + Souls + Level .. (Characteristics)
         public Dictionary<string, int> UnitsDetails;
-        public int UnitDetailCount; // Permet de savir combien d'éléments il y a dans le Dictionary<string,int> de PlayerCollection
+      
 
         public Client(int _clientId)
         {
@@ -246,7 +249,7 @@ namespace GameServer
 
                     //Set Client Player Data with Database Return
                     player = task.Result;
-                    playerCollection = taskPlayerCollection.Result;
+                    //playerCollection = taskPlayerCollection.Result; // Initialize player Collection
 
                     // Get Table XP from DB and find the required Lvl Up from the Lvl
                     player.required_levelup_xp = player.level * 100; // <= Temporary
@@ -288,486 +291,122 @@ namespace GameServer
             }*/
         }
 
-        // Principalement utilisé par le UIMenu du Client
-        public void SwitchScene(string _desiredScene)
-        {
 
-            Scene _sceneFound = SceneManager.FindSceneByName(_desiredScene);
-            //string _oldScene = Server.clients[id].player.currentScene.sceneName;
-            if (_sceneFound != null)
+        /// <summary>Send to the player a new Scene if Loadable from his current scene.</summary>
+        /// <param name="_desiredScene">Desired Scene Name recieved from the Client.</param>
+        /// <param name="_currentUserSession">The Client SessionTokens, permit to check if he is still Authenticated</param>
+        /// UPDATED 13/06/2020
+        public void SwitchScene(string _desiredScene, UserSession _currentUserSession)
+        {
+            OnSessionExpiredRenewTokens(_currentUserSession);
+
+            // For Valid Sessions, Send Collection to Player
+            if (myUser.SessionTokens.IsValid())
             {
-                if (Server.clients[id].player.playerCheckAccessDesiredScene(_sceneFound))
+                Scene _sceneFound = SceneManager.FindSceneByName(_desiredScene);
+
+                if (_sceneFound != null)
                 {
-                    ServerSend.SwitchToScene(id, _sceneFound, Server.clients[id].player.currentScene);
-                    // Update Current Scene
-                    Server.clients[id].player.currentScene = _sceneFound;
+                    if (player.playerCheckAccessDesiredScene(_sceneFound))
+                    {
+                        ServerSend.SwitchToScene(id, _sceneFound, player.currentScene);
+                        // Update Current Scene
+                        player.currentScene = _sceneFound;
+                    }
+                    else
+                    {
+                        NlogClass.target.WriteAsyncLogEvent(new AsyncLogEventInfo(new LogEventInfo(LogLevel.Warn, "SwitchScene", "PLayer [" + player.username + "] is trying to Access to a Scene wich is not Accessible. [Current Scene : " + player.currentScene.sceneName + " | Desired Scene : " + _desiredScene + "]"), NlogClass.exceptions.Add));
+                    }
                 }
                 else
                 {
-                    //Console.WriteLine("User Cant access to this Scene !");
-                    NlogClass.target.WriteAsyncLogEvent(new AsyncLogEventInfo(new LogEventInfo(LogLevel.Warn, "SwitchScene", "PLayer [" + Server.clients[id].player.username + "] is trying to Access to a Scene wich is not Accessible. [Current Scene : " + Server.clients[id].player.currentScene.sceneName + " | Desired Scene : " + _desiredScene + "]"), NlogClass.exceptions.Add));
+                    NlogClass.target.WriteAsyncLogEvent(new AsyncLogEventInfo(new LogEventInfo(LogLevel.Warn, "SwitchScene", "Scene [" + _desiredScene + "] requested by [" + player.username + "] does not exist !"), NlogClass.exceptions.Add));
                 }
             }
             else
             {
-                NlogClass.target.WriteAsyncLogEvent(new AsyncLogEventInfo(new LogEventInfo(LogLevel.Warn, "SwitchScene", "Scene [" + _desiredScene + "] requested by [" + Server.clients[id].player.username + "] does not exist !"), NlogClass.exceptions.Add));
+                NlogClass.target.WriteAsyncLogEvent(new AsyncLogEventInfo(new LogEventInfo(LogLevel.Error, "SwitchScene", "Client Username : " + myUser.Username + " | myUser.SessionTokens is still not Valid"), NlogClass.exceptions.Add));
             }
         }
 
-        public void UpdatePlayerCollection(string _userSub)
+        /// <summary>Send to the player his Updated Collection from DB.</summary>
+        /// <param name="_currentUserSession">The Client SessionTokens, permit to check if he is still Authenticated</param>
+        /// UPDATED 13/06/2020
+        public void UpdatePlayerCollection(UserSession _currentUserSession)
         {
-            //Dictionary<string, int>  Units = new Dictionary<string, int>();
             PlayerCollection = new Dictionary<NeokyCollection, Dictionary<string, int>>();
-            
 
-            if (Server.clients[id].playerCollection != null)
+            OnSessionExpiredRenewTokens(_currentUserSession);
+
+            // For Valid Sessions, Send Collection to Player
+            if (myUser.SessionTokens.IsValid())
             {
-                
                 // Foreach to Set Up the Enemy Crew
                 try
                 {
-                    
                     //Try Update the Collection Data
-                    var dynamoScanTask = Server.dynamoDBServer.ScanForPlayerCollectionUsingSub(_userSub);                    
-                    foreach (var UnitCollection in dynamoScanTask.Result.PlayerCollection)
+                    var dSTCollectionBySub = Server.dynamoDBServer.ScanForPlayerCollectionUsingSub(player.client_sub);
+                    foreach (var UnitCollection in dSTCollectionBySub.Result.PlayerCollection)
                     {
                         UnitsDetails = new Dictionary<string, int>();
-                        UnitDetailCount = 0;
-
                         try
                         {
                             //Try Update the Collection Data
-                            var dynamoScanTsk = Server.dynamoDBServer.ScanForNeokyCollectionUsingCollectionID(UnitCollection.Key);    
+                            var dSTCollectionByID = Server.dynamoDBServer.ScanForNeokyCollectionUsingCollectionID(UnitCollection.Key);
 
                             foreach (var UnitCharacteristic in UnitCollection.Value)
                             {
-                                UnitDetailCount += 1;
                                 UnitsDetails.Add(UnitCharacteristic.Key, UnitCharacteristic.Value); // 1st Member , Neoky Collection Updated (Id, Stats)       
-                            
                             }
-
-                            PlayerCollection.Add(dynamoScanTsk.Result, UnitsDetails);
+                            PlayerCollection.Add(dSTCollectionByID.Result, UnitsDetails);
                         }
                         catch (Exception e)
                         {
-                            Console.WriteLine("UpdatePlayerCollection | Scan NeokyCollection Failed");
-                            throw;
+                            NlogClass.target.WriteAsyncLogEvent(new AsyncLogEventInfo(new LogEventInfo(LogLevel.Error, "UpdatePlayerCollection", "Client Username : " + myUser.Username + " | ScanForNeokyCollectionUsingCollectionID failed | Exception : " + e), NlogClass.exceptions.Add));
                         }
-                        //UnitsDetails.Clear();
-                        Console.WriteLine("UpdatePlayerCollection | Added New Unit Collection" + UnitCollection.Key);
                     }
-                    Console.WriteLine("UpdatePlayerCollection | All Unit Collection Added");
-
-                    ServerSend.SendPlayerCollection(id, PlayerCollection.Count, UnitDetailCount, PlayerCollection);
+                    ServerSend.SendPlayerCollection(id, PlayerCollection.Count, UnitsDetails.Count, PlayerCollection); // the .count are needed to read the Packet on Client Side
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine("UpdatePlayerCollection | Scan Player Collection Failed");
+                    NlogClass.target.WriteAsyncLogEvent(new AsyncLogEventInfo(new LogEventInfo(LogLevel.Error, "UpdatePlayerCollection", "Client Username : " + myUser.Username + " | ScanForPlayerCollectionUsingSub failed | Exception : " + e), NlogClass.exceptions.Add));
                 }
-                //ServerSend.SendPlayerCollection(id, PlayerCollection.Count, PlayerCollection);
             }
             else
             {
-                Console.WriteLine("UpdatePlayerCollection | User Player Collection is Null !");
+                NlogClass.target.WriteAsyncLogEvent(new AsyncLogEventInfo(new LogEventInfo(LogLevel.Error, "UpdatePlayerCollection", "Client Username : " + myUser.Username + " | myUser.SessionTokens is still not Valid"), NlogClass.exceptions.Add));
             }
         }
 
-
-
-
-
-        public void EnterDungeon(string _desiredDungeon)
+        /// <summary>Send the client to the Spawn scene of the claimed Dungeon</summary>
+        /// <param name="_currentUserSession">The Client SessionTokens, permit to check if he is still Authenticated</param>
+        /// <param name="_desiredDungeon">The Client claimed Dungeon Name/param>
+        /// UPDATED 13/06/2020
+        public void EnterDungeon(UserSession _currentUserSession, string _desiredDungeon)
         {
-            Dungeon.Dungeon _dungeonFound = DungeonManager.FindDungeonByName(_desiredDungeon);
-
-
-            if (_dungeonFound != null)
-            {   // Dungeon Exists                
-                if (_dungeonFound.playerCanAccessDungeon(Server.clients[id].player.level))
-                {   //Player have the right level for this Dungeon                    
-                    if (_dungeonFound.playerCanAccessDesiredDungeonMap(_dungeonFound, Server.clients[id].player.currentScene.sceneName))
-                    {   // Dungeon Spawn Scene exist for this Dungeon & Player is on the Right CurrentScene to Access it
-
-                        ServerSend.SwitchToScene(id, _dungeonFound.spawnScene, Server.clients[id].player.currentScene);
-                        // Update Current Scene
-                        Server.clients[id].player.currentScene = _dungeonFound.spawnScene;
-                    }
-                    else
-                    {
-                        Console.WriteLine("SpawnScene does not exist for this Dungeon OR Player is trying to access to the Scene from a bad Entry Point.");
-                        NlogClass.target.WriteAsyncLogEvent(new AsyncLogEventInfo(new LogEventInfo(LogLevel.Warn, "EnterDungeon", "SpawnDungeonScene does not exist for this Dungeon OR Player [" + Server.clients[id].player.username + "] is trying to access to the Scene from a bad Entry Point. [CurrentScene : " + Server.clients[id].player.currentScene.sceneName + "]"), NlogClass.exceptions.Add));
-
-                    }
-                }
-                else
-                {
-                    Console.WriteLine("Player dont have the level required to Access this Dungeon.");
-                    NlogClass.target.WriteAsyncLogEvent(new AsyncLogEventInfo(new LogEventInfo(LogLevel.Warn, "EnterDungeon", "Player [" + Server.clients[id].player.username + "] dont have the level required to Access this Dungeon. [Lvl : " + Server.clients[id].player.level + "]"), NlogClass.exceptions.Add));
-                }
+            OnSessionExpiredRenewTokens(_currentUserSession);
+            // For Valid Sessions, Send Collection to Player
+            if (myUser.SessionTokens.IsValid())
+            {
+                player.PlayerEnterDungeon(id,_desiredDungeon);
             }
         }
 
-        public void setFight ()
+        /// <summary>Instantiate PlayerCrew and EnemyCrew</summary>
+        /// <param name="_currentUserSession">The Client SessionTokens, permit to check if he is still Authenticated</param>
+        /// UPDATED 13/06/2020
+        public void setPlayerFight(UserSession _currentUserSession)
         {
-            PlayerCrew = new Dictionary<int, NeokyCollection>();
-            EnemyCrew = new Dictionary<int, NeokyCollection>();
-
-
-            if (Server.clients[id].player.currentScene.enemyCrewMember != null)
-            {
-                // Foreach to Set Up the Enemy Crew
-                foreach (var item in Server.clients[id].player.currentScene.enemyCrewMember)
-                {
-                
-                    switch (item.Key)
-                    {
-                        case 1:
-                            // In case the 1st Member of the crew is Set 
-                            if (item.Value != null)
-                            {   // If the value "Exists" / is a Real Value
-                                try
-                                {
-                                    //Try Update the Collection Data
-                                    var dynamoScanTask = Server.dynamoDBServer.ScanForNeokyCollectionUsingCollectionID(item.Value.collection_id);
-                                    EnemyCrew.Add(1, dynamoScanTask.Result); // 1st Member , Neoky Collection Updated (Id, Stats)
-                                    Console.WriteLine("setFight | Scan Collection Data Success");
-                                }
-                                catch (Exception e)
-                                {
-                                    Console.WriteLine("setFight | Scan Collection to Update Collection Data Failed");
-                                    //throw;
-                                }
-                            }
-                            else
-                            {
-                                Console.WriteLine("setFight | Player have not set a Member_01 value is Null.");
-                            }
-                            break;
-                        case 2:
-                            // In case the 1st Member of the crew is Set 
-                            if (item.Value != null)
-                            {   // If the value "Exists" / is a Real Value
-                                try
-                                {
-                                    //Try Update the Collection Data
-                                    var dynamoScanTask = Server.dynamoDBServer.ScanForNeokyCollectionUsingCollectionID(item.Value.collection_id);
-                                    EnemyCrew.Add(2, dynamoScanTask.Result); // 1st Member , Neoky Collection Updated (Id, Stats)
-                                    Console.WriteLine("setFight | Scan Collection Data Success");
-                                }
-                                catch (Exception e)
-                                {
-                                    Console.WriteLine("setFight | Scan Collection to Update Collection Data Failed");
-                                    //throw;
-                                }
-                            }
-                            else
-                            {
-                                Console.WriteLine("setFight | Player have not set a Member_01 value is Null.");
-                            }
-                            break;
-                        case 3:
-                            // In case the 1st Member of the crew is Set 
-                            if (item.Value != null)
-                            {   // If the value "Exists" / is a Real Value
-                                try
-                                {
-                                    //Try Update the Collection Data
-                                    var dynamoScanTask = Server.dynamoDBServer.ScanForNeokyCollectionUsingCollectionID(item.Value.collection_id);
-                                    EnemyCrew.Add(3, dynamoScanTask.Result); // 1st Member , Neoky Collection Updated (Id, Stats)
-                                    Console.WriteLine("setFight | Scan Collection Data Success");
-                                }
-                                catch (Exception e)
-                                {
-                                    Console.WriteLine("setFight | Scan Collection to Update Collection Data Failed");
-                                    //throw;
-                                }
-                            }
-                            else
-                            {
-                                Console.WriteLine("setFight | Player have not set a Member_01 value is Null.");
-                            }
-                            break;
-                        case 4:
-                            // In case the 1st Member of the crew is Set 
-                            if (item.Value != null)
-                            {   // If the value "Exists" / is a Real Value
-                                try
-                                {
-                                    //Try Update the Collection Data
-                                    var dynamoScanTask = Server.dynamoDBServer.ScanForNeokyCollectionUsingCollectionID(item.Value.collection_id);
-                                    EnemyCrew.Add(4, dynamoScanTask.Result); // 1st Member , Neoky Collection Updated (Id, Stats)
-                                    Console.WriteLine("setFight | Scan Collection Data Success");
-                                }
-                                catch (Exception e)
-                                {
-                                    Console.WriteLine("setFight | Scan Collection to Update Collection Data Failed");
-                                    //throw;
-                                }
-                            }
-                            else
-                            {
-                                Console.WriteLine("setFight | Player have not set a Member_01 value is Null.");
-                            }
-                            break;
-                        case 5:
-                            // In case the 1st Member of the crew is Set 
-                            if (item.Value != null)
-                            {   // If the value "Exists" / is a Real Value
-                                try
-                                {
-                                    //Try Update the Collection Data
-                                    var dynamoScanTask = Server.dynamoDBServer.ScanForNeokyCollectionUsingCollectionID(item.Value.collection_id);
-                                    EnemyCrew.Add(5, dynamoScanTask.Result); // 1st Member , Neoky Collection Updated (Id, Stats)
-                                    Console.WriteLine("setFight | Scan Collection Data Success");
-                                }
-                                catch (Exception e)
-                                {
-                                    Console.WriteLine("setFight | Scan Collection to Update Collection Data Failed");
-                                    //throw;
-                                }
-                            }
-                            else
-                            {
-                                Console.WriteLine("setFight | Player have not set a Member_01 value is Null.");
-                            }
-                            break;
-                        case 6:
-                            // In case the 1st Member of the crew is Set 
-                            if (item.Value != null)
-                            {   // If the value "Exists" / is a Real Value
-                                try
-                                {
-                                    //Try Update the Collection Data
-                                    var dynamoScanTask = Server.dynamoDBServer.ScanForNeokyCollectionUsingCollectionID(item.Value.collection_id);
-                                    EnemyCrew.Add(6, dynamoScanTask.Result); // 1st Member , Neoky Collection Updated (Id, Stats)
-                                    Console.WriteLine("setFight | Scan Collection Data Success");
-                                }
-                                catch (Exception e)
-                                {
-                                    Console.WriteLine("setFight | Scan Collection to Update Collection Data Failed");
-                                    //throw;
-                                }
-                            }
-                            else
-                            {
-                                Console.WriteLine("setFight | Player have not set a Member_01 value is Null.");
-                            }
-                            break;
-                        default:
-                            Console.WriteLine("setFight | We found a Key we cant read.");
-                            break;
-                    }
-                }
-            }
-            else
-            {
-                Console.WriteLine("setFight | enemyCrewMember seems Empty.");
-            }
-
-            if (Server.clients[id].player.PlayerCrew != null)
-            {
-                // Foreach to Set Up the Player Crew
-                foreach (var item in Server.clients[id].player.PlayerCrew)
-                {
-                    switch (item.Key)
-                    {
-                        case "Member_01":
-                            // In case the 1st Member of the crew is Set 
-                            if (item.Value != null)
-                            {   // If the value "Exists" / is a Real Value
-                                try
-                                {
-                                    //Try Update the Collection Data
-                                    var dynamoScanTask = Server.dynamoDBServer.ScanForNeokyCollectionUsingCollectionID(item.Value);
-                                    PlayerCrew.Add(1, dynamoScanTask.Result); // 1st Member , Neoky Collection Updated (Id, Stats)
-                                    Console.WriteLine("setFight | Scan Collection Data Success");
-                                }
-                                catch (Exception e)
-                                {
-                                    Console.WriteLine("setFight | Scan Collection to Update Collection Data Failed");
-                                    //throw;
-                                }
-                            }
-                            else
-                            {
-                                Console.WriteLine("setFight | Player have not set a Member_01 value is Null.");
-                            }
-                            break;
-                        case "Member_02":
-                            // In case the 1st Member of the crew is Set 
-                            if (item.Value != null)
-                            {   // If the value "Exists" / is a Real Value
-                                try
-                                {
-                                    //Try Update the Collection Data
-                                    var dynamoScanTask = Server.dynamoDBServer.ScanForNeokyCollectionUsingCollectionID(item.Value);
-                                    PlayerCrew.Add(2, dynamoScanTask.Result); // 1st Member , Neoky Collection Updated (Id, Stats)
-                                    Console.WriteLine("setFight | Scan Collection Data Success");
-                                }
-                                catch (Exception e)
-                                {
-                                    Console.WriteLine("setFight | Scan Collection to Update Collection Data Failed");
-                                    //throw;
-                                }
-                            }
-                            else
-                            {
-                                Console.WriteLine("setFight | Player have not set a Member_01 value is Null.");
-                            }
-                            break;
-                        case "Member_03":
-                            // In case the 1st Member of the crew is Set 
-                            if (item.Value != null)
-                            {   // If the value "Exists" / is a Real Value
-                                try
-                                {
-                                    //Try Update the Collection Data
-                                    var dynamoScanTask = Server.dynamoDBServer.ScanForNeokyCollectionUsingCollectionID(item.Value);
-                                    PlayerCrew.Add(3, dynamoScanTask.Result); // 1st Member , Neoky Collection Updated (Id, Stats)
-                                    Console.WriteLine("setFight | Scan Collection Data Success");
-                                }
-                                catch (Exception e)
-                                {
-                                    Console.WriteLine("setFight | Scan Collection to Update Collection Data Failed");
-                                    //throw;
-                                }
-                            }
-                            else
-                            {
-                                Console.WriteLine("setFight | Player have not set a Member_01 value is Null.");
-                            }
-                            break;
-                        case "Member_04":
-                            // In case the 1st Member of the crew is Set 
-                            if (item.Value != null)
-                            {   // If the value "Exists" / is a Real Value
-                                try
-                                {
-                                    //Try Update the Collection Data
-                                    var dynamoScanTask = Server.dynamoDBServer.ScanForNeokyCollectionUsingCollectionID(item.Value);
-                                    PlayerCrew.Add(4, dynamoScanTask.Result); // 1st Member , Neoky Collection Updated (Id, Stats)
-                                    Console.WriteLine("setFight | Scan Collection Data Success");
-                                }
-                                catch (Exception e)
-                                {
-                                    Console.WriteLine("setFight | Scan Collection to Update Collection Data Failed");
-                                    //throw;
-                                }
-                            }
-                            else
-                            {
-                                Console.WriteLine("setFight | Player have not set a Member_01 value is Null.");
-                            }
-                            break;
-                        case "Member_05":
-                            // In case the 1st Member of the crew is Set 
-                            if (item.Value != null)
-                            {   // If the value "Exists" / is a Real Value
-                                try
-                                {
-                                    //Try Update the Collection Data
-                                    var dynamoScanTask = Server.dynamoDBServer.ScanForNeokyCollectionUsingCollectionID(item.Value);
-                                    PlayerCrew.Add(5, dynamoScanTask.Result); // 1st Member , Neoky Collection Updated (Id, Stats)
-                                    Console.WriteLine("setFight | Scan Collection Data Success");
-                                }
-                                catch (Exception e)
-                                {
-                                    Console.WriteLine("setFight | Scan Collection to Update Collection Data Failed");
-                                    //throw;
-                                }
-                            }
-                            else
-                            {
-                                Console.WriteLine("setFight | Player have not set a Member_01 value is Null.");
-                            }
-                            break;
-                        case "Member_06":
-                            // In case the 1st Member of the crew is Set 
-                            if (item.Value != null)
-                            {   // If the value "Exists" / is a Real Value
-                                try
-                                {
-                                    //Try Update the Collection Data
-                                    var dynamoScanTask = Server.dynamoDBServer.ScanForNeokyCollectionUsingCollectionID(item.Value);
-                                    PlayerCrew.Add(6, dynamoScanTask.Result); // 1st Member , Neoky Collection Updated (Id, Stats)
-                                    Console.WriteLine("setFight | Scan Collection Data Success");
-                                }
-                                catch (Exception e)
-                                {
-                                    Console.WriteLine("setFight | Scan Collection to Update Collection Data Failed");
-                                    //throw;
-                                }
-                            }
-                            else
-                            {
-                                Console.WriteLine("setFight | Player have not set a Member_01 value is Null.");
-                            }
-                            break;
-                        default:
-                            Console.WriteLine("setFight | We found a Key we cant read.");
-                            break;
-                    }
-
-                }
-            }
-            else
-            {
-                Console.WriteLine("setFight | Player Crew seems Empty.");
-            }
-
-            // Foreach to send the EnemyCrew to the player
-            /*foreach (var _enemyCrewMember in EnemyCrew)
-            {
-                if (_enemyCrewMember.Value != null)
-                {
-                    // Set the Member crew as Spawned
-                    _enemyCrewMember.Value.isSpawned = true;
-                    //ServerSend.SpawnEnemyMemberCrew(id, _enemyCrewMember.Key, _enemyCrewMember.Value);
-                    
-                }
-            }*/
-
-
-            ServerSend.SpawnEnemyAllCrew(id, EnemyCrew.Count, EnemyCrew);
-            ServerSend.SpawnPlayerAllCrew(id, PlayerCrew.Count, PlayerCrew);
-            // Foreach to send the crew to the player
-            /*foreach (var _crewMember in ClientCollection)
-            {
-                if (_crewMember.Value != null)
-                {
-                    // Set the Member crew as Spawned
-                    _crewMember.Value.isSpawned = true;
-                    ServerSend.SpawnMemberCrew(id, _crewMember.Key, _crewMember.Value);                    
-                }
-            }*/
+            OnSessionExpiredRenewTokens(_currentUserSession);
+            player.SetFight(id);
         }
 
-        public async void SignUptoCognito(string _username, string _password, string _email)
+        public void UnitAttack(UserSession _currentUserSession, int _unitPosition, int _unitTarget)
         {
-            // If the REgEx Formats are Respected, we proceed to Adhesion OR We Return an Error Format
-            if (SecurityCheck.CheckUserPattern(_username))
-            {
-                if (SecurityCheck.CheckPasswordPattern(_password))
-                {
-                    if (SecurityCheck.CheckEmailPattern(_email))
-                    {
-                        await SignUpClients.SignUpClientToCognito(id, _username, _password, _email);
-                    }
-                    else
-                    {
-                        ServerSend.SignUpStatusReturn(id, Constants.ADHESION_FORMAT_EMAIL_KO);
-                    }
-                }
-                else
-                {
-                    ServerSend.SignUpStatusReturn(id, Constants.ADHESION_FORMAT_PASSWORD_KO);
-                }
-            }
-            else
-            {
-                ServerSend.SignUpStatusReturn(id, Constants.ADHESION_FORMAT_USERNAME_KO);
-            }
+            OnSessionExpiredRenewTokens(_currentUserSession);
+            player.UnitPlayerAttack(id,_unitPosition,_unitTarget);
         }
+
         public async void SignInToCognito(string _username, string _password)
         {
             
@@ -779,7 +418,7 @@ namespace GameServer
                     // This will SET a UserCognito with Valid Tokens on my Client.
                     // And send the tokens to the Client who has Sign In
                     //Server.clients[_fromClient].player.
-                    Server.clients[id].myUser = new CognitoUser(_username, Constants.CLIENTAPP_ID, Server.cognitoManagerServer.userPool, Server.cognitoManagerServer.provider, Constants.NeokySecret);
+                    myUser = new CognitoUser(_username, Constants.CLIENTAPP_ID, Server.cognitoManagerServer.userPool, Server.cognitoManagerServer.provider, Constants.NeokySecret);
                     await SignInClients.SignInClientToCognito(_username, _password, id);
                 }
                 else
@@ -794,45 +433,65 @@ namespace GameServer
 
         }
 
-        public async void AccessHomepage(string _clientToken)
-        {
-            // Check Token is still valid
-            // Current Scene = Homepage
-            // Ask Client to Load Homepage
-            // Et on confirme au client qu'il peut Switch de Scene
-            //ServerSend.SwitchToScene(id, Constants.SCENE_HOMEPAGE, Constants.SCENE_NOSCENE);
-        }
-
+        /// <summary>Update myUser SessionTokens with RefreshToken</summary>
+        /// <param name="_RefreshToken">The CognitoUser Session RefreshToken, used to get New IdToken and AccessToken</param>
+        /// UPDATED 13/06/2020
         public async Task GetNewValidTokensAsync(string _RefreshToken)
         {
-
-            //var CompareTokens = Server.clients[id].myUser.SessionTokens.IdToken;
-            Server.clients[id].myUser.SessionTokens = new CognitoUserSession(null, null, _RefreshToken, DateTime.Now, DateTime.Now.AddHours(1));
-
-            InitiateRefreshTokenAuthRequest refreshRequest = new InitiateRefreshTokenAuthRequest()
-            {
-                AuthFlowType = AuthFlowType.REFRESH_TOKEN_AUTH
-            };           
+            // The  "Refresh token expiration (days)" (Cognito->UserPool->General Settings->App clients->Show Details) is the
+            // amount of time since the last login that you can use the refresh token to get new tokens.
+            // After that period the refresh will fail
+            // Using DateTime.Now.AddHours(1) is a workaround for https://github.com/aws/aws-sdk-net-extensions-cognito/issues/24
+            myUser.SessionTokens = new CognitoUserSession(myUser.SessionTokens.IdToken, myUser.SessionTokens.AccessToken, _RefreshToken, DateTime.Now, DateTime.Now.AddHours(1));
 
             try
             {
-                Console.WriteLine("Client.cs | GetNewValidTokensAsync | StartWithRefreshTokenAuthAsync try lunched !");
-                AuthFlowResponse authResponse = await Server.clients[id].myUser.StartWithRefreshTokenAuthAsync(refreshRequest).ConfigureAwait(false);
-                currentUserSession = new UserSession(Server.clients[id].myUser.SessionTokens.AccessToken, Server.clients[id].myUser.SessionTokens.IdToken, Server.clients[id].myUser.SessionTokens.RefreshToken);
+                AuthFlowResponse context = await myUser.StartWithRefreshTokenAuthAsync(new InitiateRefreshTokenAuthRequest
+                {
+                    AuthFlowType = AuthFlowType.REFRESH_TOKEN_AUTH
 
-                Console.WriteLine("Client.cs | GetNewValidTokensAsync | SessionUpdated sended to Client");
+                })
+                .ConfigureAwait(false);
+                myUser.SessionTokens.RefreshToken = _RefreshToken; // Problem is StartWithRefreshTokenAuthAsync return a Null RefreshToken so i will keep my current One.
+                currentUserSession = new UserSession(myUser.SessionTokens.AccessToken, myUser.SessionTokens.IdToken, _RefreshToken);
                 ServerSend.SendTokens(id, currentUserSession);
+            }
+            catch (NotAuthorizedException)
+            {
+                //https://docs.aws.amazon.com/cognito/latest/developerguide/amazon-cognito-user-pools-using-tokens-with-identity-providers.html
+                // refresh tokens will expire - user must login manually every x days (see user pool -> app clients -> details)
+                Console.WriteLine("Ask to Client to Login Manually");
+                //return new SignInContext(CognitoResult.RefreshNotAuthorized) { ResultMessage = ne.Message };
             }
             catch (Exception e)
             {
-                Console.WriteLine("Client.cs | GetNewValidTokensAsync | StartWithRefreshTokenAuthAsync failed to Refresh Session");
-                switch (e.GetType().ToString())
-                {
-                    default:
-                        Console.WriteLine("Client.cs | GetNewValidTokensAsync | Unknown Exception | " + e.GetType().ToString() + " | " + e);
-                        //ServerSend.ClientForgotPasswordStatus(_clientid, Constants.FORGOT_PASSWORD_KO);
-                        break;
-                }
+                NlogClass.target.WriteAsyncLogEvent(new AsyncLogEventInfo(new LogEventInfo(LogLevel.Error, "GetNewValidTokensAsync", "Client Name : " + myUser.Username + " | RefreshToken Create New Session failed | Exception : " + e), NlogClass.exceptions.Add));
+            }
+        }
+
+        /// <summary>Check if the Client is requesting with a UserSession from another client.</summary>
+        /// <param name="_userSession">The Client Claimed UserSession</param>
+        /// UPDATED 13/06/2020
+        public bool CheckSessionClaimedByUser(UserSession _userSession)
+        {
+            if (_userSession.Refresh_Token == myUser.SessionTokens.RefreshToken)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        /// <summary>Check if the UserSession is Valid, if Not Renew Tokens </summary>
+        /// <param name="_currentUserSession">The Client Claimed UserSession</param>
+        /// UPDATED 13/06/2020
+        private async void OnSessionExpiredRenewTokens(UserSession _currentUserSession)
+        {
+            if (!myUser.SessionTokens.IsValid())
+            {
+                await GetNewValidTokensAsync(_currentUserSession.Refresh_Token); // If not possible the Function ll send a Client Packet Return to LoginPage
             }
         }
 
@@ -842,6 +501,8 @@ namespace GameServer
             Console.WriteLine($"{tcp.socket.Client.RemoteEndPoint} has disconnected.");
 
             player = null;
+            myUser = null;
+            currentUserSession = null;
 
             tcp.Disconnect();
             udp.Disconnect();

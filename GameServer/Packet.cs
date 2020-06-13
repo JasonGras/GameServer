@@ -20,7 +20,8 @@ namespace GameServer
         forgotPwdStatus,
         spawnEnemyAllCrew,
         spawnPlayerAllCrew,
-        getAllPlayerUnits
+        getAllPlayerUnits,
+        callbackAttackPacket
 
         /*
         playerPosition,
@@ -42,6 +43,8 @@ namespace GameServer
         enterDungeon,
         FightPacket,
         updateCollection,
+        unitAttack,
+        attackPacket,
         //playerMovement,
     }
 
@@ -418,9 +421,9 @@ namespace GameServer
                 }
                 return _value; // Return the string
             }
-            catch (Exception e)
+            catch (Exception)
             {
-                throw new Exception("Could not read value of type 'bool'!"+e);
+                throw new Exception("Could not read value of type 'string'!");
                 //Console.WriteLine("Could not read value of type 'string'!");
                  //return "READ_STRING_KO";
             }
@@ -434,7 +437,7 @@ namespace GameServer
             {
                 return new Vector3(ReadFloat(_moveReadPos), ReadFloat(_moveReadPos), ReadFloat(_moveReadPos));
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 throw new Exception("Could not read value of type 'Vector3'!");
             }
@@ -446,7 +449,7 @@ namespace GameServer
             {
                 return new UserSession(ReadString(_moveReadPos), ReadString(_moveReadPos), ReadString(_moveReadPos));// ReadFloat(_moveReadPos), ReadFloat(_moveReadPos), ReadFloat(_moveReadPos)
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 throw new Exception("Could not read value of type 'UserSession'!");
             }
@@ -460,7 +463,7 @@ namespace GameServer
             {
                 return new Quaternion(ReadFloat(_moveReadPos), ReadFloat(_moveReadPos), ReadFloat(_moveReadPos), ReadFloat(_moveReadPos));
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 throw new Exception("Could not read value of type 'Quaternion'!");
             }

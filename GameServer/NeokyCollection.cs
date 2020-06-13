@@ -26,5 +26,6 @@ namespace GameServer
 
         [DynamoDBIgnore]
         public bool isSpawned { get; set; } = false;
+        
     }
 }

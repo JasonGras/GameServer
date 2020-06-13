@@ -31,7 +31,6 @@ namespace GameServer
             });
 
             Console.WriteLine("Connexion to Database OK");
-
         }
 
         public async Task<CreateTableResponse> SetupAsync()

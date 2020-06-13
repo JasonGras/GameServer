@@ -10,64 +10,78 @@ using Amazon.CognitoIdentityProvider.Model;
 //using Amazon;
 //using Amazon.CognitoIdentity;
 using Amazon.Extensions.CognitoAuthentication;
+using NLog.Common;
+using NLog;
 //using System.Linq;
 //using Amazon.Runtime.Internal;
 
 namespace GameServer
 {
-    static class SignUpClients
-    {      
-
-        public static async Task SignUpClientToCognito(int _clientID, string _username, string _password, string _email)
+    public class SignUpClients
+    {
+        public async void SignUptoCognito(int _clientid,string _username, string _password, string _email)
         {
-            // Provider Already Defined on The Server with CognitoManager Constructor.
-
-            SignUpRequest signUpRequest = new SignUpRequest()
+            // If the REgEx Formats are Respected, we proceed to Adhesion OR We Return an Error Format
+            if (SecurityCheck.CheckUserPattern(_username))
             {
-                ClientId = Constants.CLIENTAPP_ID,
-                Username = _username,
-                Password = _password,
-                SecretHash = CognitoHashCalculator.GetSecretHash(_username, Constants.CLIENTAPP_ID, Constants.NeokySecret)
-            };
-
-            List<AttributeType> attributes = new List<AttributeType>()
-            {
-                new AttributeType(){Name="email", Value = _email} // , si >> 1 sauf a la fin
-                //new AttributeType(){Name="custom:Money", Value = "1000"}
-            };
-
-            // Send SignupRequest
-            signUpRequest.UserAttributes = attributes;
-
-            Console.WriteLine("SignUpClient.cs | Init.");
-            try
-            {
-                SignUpResponse result = await Server.cognitoManagerServer.provider.SignUpAsync(signUpRequest);
-
-                if (result.HttpStatusCode == System.Net.HttpStatusCode.OK)
+                if (SecurityCheck.CheckPasswordPattern(_password))
                 {
-                    Console.WriteLine("SignUpClient.cs | Sign Up Success");
-                    //Server.clients[_clientID].myUser = user;
-                    ServerSend.SignUpStatusReturn(_clientID,Constants.ADHESION_OK);
-                    // Retourner le Statut Adhesion_OK
+                    if (SecurityCheck.CheckEmailPattern(_email))
+                    {
+                        SignUpRequest signUpRequest = new SignUpRequest()
+                        {
+                            ClientId = Constants.CLIENTAPP_ID,
+                            Username = _username,
+                            Password = _password,
+                            SecretHash = CognitoHashCalculator.GetSecretHash(_username, Constants.CLIENTAPP_ID, Constants.NeokySecret)
+                        };
+
+                        List<AttributeType> attributes = new List<AttributeType>()
+                        {
+                            new AttributeType(){Name="email", Value = _email} 
+                        };
+
+                        // Send SignupRequest
+                        signUpRequest.UserAttributes = attributes;
+
+                        try
+                        {
+                            SignUpResponse result = await Server.cognitoManagerServer.provider.SignUpAsync(signUpRequest);
+
+                            if (result.HttpStatusCode == System.Net.HttpStatusCode.OK)
+                            {
+                                ServerSend.SignUpStatusReturn(_clientid, Constants.ADHESION_OK);
+                            }
+                        }
+                        catch (Exception e)
+                        {                            
+                            switch (e.GetType().ToString())
+                            {
+                                case "Amazon.CognitoIdentityProvider.Model.UsernameExistsException":
+                                    ServerSend.SignUpStatusReturn(_clientid, Constants.ADHESION_ALREADY_EXIST);
+                                    break;
+                                default:
+                                    NlogClass.target.WriteAsyncLogEvent(new AsyncLogEventInfo(new LogEventInfo(LogLevel.Error, "SignUpClientToCognito", "Client ID : " + _clientid.ToString() + "  | New Exception | Code : " + e.GetType().ToString() + " | Exeption : " + e.Message), NlogClass.exceptions.Add));
+                                    ServerSend.SignUpStatusReturn(_clientid, Constants.ADHESION_KO);
+                                    break;
+                            }
+
+                        }
+                    }
+                    else
+                    {
+                        ServerSend.SignUpStatusReturn(_clientid, Constants.ADHESION_FORMAT_EMAIL_KO);
+                    }
+                }
+                else
+                {
+                    ServerSend.SignUpStatusReturn(_clientid, Constants.ADHESION_FORMAT_PASSWORD_KO);
                 }
             }
-            catch (Exception e)
+            else
             {
-                // Retourner le Statut Adhesion_KO
-                Console.WriteLine("SignUpClientToCognito | New Exception | Code : " + e.GetType().ToString() + " | Exeption : " + e.Message);
-                switch (e.GetType().ToString())
-                {
-                    case "Amazon.CognitoIdentityProvider.Model.UsernameExistsException":
-                        ServerSend.SignUpStatusReturn(_clientID, Constants.ADHESION_ALREADY_EXIST);
-                        break;
-                    default:
-                        ServerSend.SignUpStatusReturn(_clientID, Constants.ADHESION_KO);
-                        break;
-                }
-                
+                ServerSend.SignUpStatusReturn(_clientid, Constants.ADHESION_FORMAT_USERNAME_KO);
             }
-            Console.WriteLine("SignUpClientToCognito : Over.");
         }
     }
 
