@@ -2,6 +2,7 @@
 using Amazon.DynamoDBv2.DataModel;
 using Amazon.DynamoDBv2.DocumentModel;
 using Amazon.DynamoDBv2.Model;
+using GameServer.Loots;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -75,8 +76,15 @@ namespace GameServer
         public async Task SaveOrUpdatNeokyClients(Player nClients)
         {
             //Console.WriteLine("SaveOrUpdatNeokyClients : Lunched");
-            await _context.SaveAsync(nClients);
-            Console.WriteLine("SaveOrUpdatNeokyClients : Done");
+            await _context.SaveAsync(nClients);            
+            //Console.WriteLine("SaveOrUpdatNeokyClients : Done");
+        }
+
+        public async Task SaveOrUpdatNeokCollection(NeokyPlayerCollection nPlayerCollection)
+        {
+            //Console.WriteLine("SaveOrUpdatNeokyClients : Lunched");
+            await _context.SaveAsync(nPlayerCollection);
+            //Console.WriteLine("SaveOrUpdatNeokyClients : Done");
         }
 
         public async Task<Player> GetNeokyClientsUsingHashKey(string id)
@@ -136,6 +144,24 @@ namespace GameServer
             );
             var result = await search.GetRemainingAsync();
             return result.FirstOrDefault();
+        }
+
+        public async Task<List<NeokyCollection>> ScanAllNeokyCollectionByQuality(int _UnitQUality)
+        {
+            var search = _context.ScanAsync<NeokyCollection>
+            (
+                new[]
+                {
+                    new ScanCondition
+                    (                        
+                        nameof(NeokyCollection.collection_quality),
+                        ScanOperator.Equal,
+                        _UnitQUality
+                    )
+                }
+            );
+            var result = await search.GetRemainingAsync();
+            return result;
         }
     }
 }

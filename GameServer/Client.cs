@@ -18,6 +18,8 @@ using GameServer.Dungeon;
 
 using System.ComponentModel.DataAnnotations;
 using Amazon.CognitoIdentityProvider.Model;
+using GameServer.Loots;
+using System.Diagnostics;
 
 namespace GameServer
 {
@@ -30,6 +32,8 @@ namespace GameServer
         public CognitoUser myUser;
         public UserSession currentUserSession;
         public Player player;
+        //public bool CoinOpeningAvailable = true;
+        public Task RemoveCoinTask = null;
 
         public TCP tcp;
         public UDP udp;
@@ -235,6 +239,127 @@ namespace GameServer
 
         /// <summary>Sends the client into the game and informs other clients of the new player.</summary>
         /// <param name="_playerName">The username of the new player.</param>
+        public void GetRandomLoot(int _coin, int _coinQuality, UserSession _currentUserSession)
+        {
+            CoinLoots coin = new CoinLoots();            
+
+            OnSessionExpiredRenewTokens(_currentUserSession);
+
+            if (myUser.SessionTokens.IsValid())
+            {
+                try
+                {
+                    //Try Update the Collection Data
+                    var dSTCollectionBySub = Server.dynamoDBServer.ScanForNeokyClientsUsingUsername(player.username);
+
+                    switch (_coin)
+                    {
+                        case 0: // CoinLoots.Coin.Viking
+                            dSTCollectionBySub.Result.coin.TryGetValue(Constants.DB_COINTYPE_01, out int _currentVikingCoins);
+                            if (_currentVikingCoins > 0)
+                            {
+                                Console.WriteLine("Open " + Constants.DB_COINTYPE_01 + " Nb Coin : " + _currentVikingCoins);
+                                var NeokyUnit = coin.GetRandomLoot((CoinLoots.CoinAverageQuality)_coinQuality);
+                                AddLootToPlayer(NeokyUnit);
+                                RemovePlayerCoin(_coin);
+                                Console.WriteLine("Open Done" + Constants.DB_COINTYPE_01);
+                            }
+                            else
+                            {
+                                NlogClass.target.WriteAsyncLogEvent(new AsyncLogEventInfo(new LogEventInfo(LogLevel.Error, "GetRandomLoot", "Client Username : " + myUser.Username + " | Dont have enough Coins for claimed " + Constants.DB_COINTYPE_01 + " CoinOpening | CoinOpeiningAvailable : " + RemoveCoinTask), NlogClass.exceptions.Add));
+                            }
+                            break;
+                        case 1: //CoinLoots.Coin.Massai
+                            dSTCollectionBySub.Result.coin.TryGetValue(Constants.DB_COINTYPE_02, out int _currentMassaiCoins);
+                            if (_currentMassaiCoins > 0)
+                            {
+                            }
+                            else
+                            {
+                                NlogClass.target.WriteAsyncLogEvent(new AsyncLogEventInfo(new LogEventInfo(LogLevel.Error, "GetRandomLoot", "Client Username : " + myUser.Username + " | Dont have enough Coins for claimed " + Constants.DB_COINTYPE_02 + " CoinOpening"), NlogClass.exceptions.Add));
+                            }
+                            break;
+                        default:
+                            NlogClass.target.WriteAsyncLogEvent(new AsyncLogEventInfo(new LogEventInfo(LogLevel.Error, "GetRandomLoot", "Client Username : " + myUser.Username + " | Unknown type of Coin"), NlogClass.exceptions.Add));
+                            break;
+                    }
+                }
+                catch (Exception)
+                {
+                    NlogClass.target.WriteAsyncLogEvent(new AsyncLogEventInfo(new LogEventInfo(LogLevel.Warn, "GetRandomLoot", "Database scan to Check Player have Coins [ Player claimed name : " + player.username + "]"), NlogClass.exceptions.Add));
+                }
+            }
+            else
+            {
+                NlogClass.target.WriteAsyncLogEvent(new AsyncLogEventInfo(new LogEventInfo(LogLevel.Error, "GetRandomLoot", "Client Username : " + myUser.Username + " | myUser.SessionTokens is still not Valid"), NlogClass.exceptions.Add));
+            }
+        }
+
+        // Not Async Coz it causes problem Opening several Coins instead of 1
+        private void RemovePlayerCoin(int _coin)
+        {
+            switch (_coin)
+            {
+                case 0:  // CoinLoots.Coin.Viking
+
+                    try
+                    {
+                        //Try Update the Collection Data
+                        var dSTCollectionByUsername = Server.dynamoDBServer.ScanForNeokyClientsUsingUsername(player.username);
+                        dSTCollectionByUsername.Result.coin[Constants.DB_COINTYPE_01]--;
+                        //Console.WriteLine("Remove Coin to player !");
+                        //RemoveCoinTask = Task.Run(async () => await Server.dynamoDBServer.SaveOrUpdatNeokyClients(dSTCollectionByUsername.Result));
+                        //RemoveCoinTask.Status
+                        Server.dynamoDBServer.SaveOrUpdatNeokyClients(dSTCollectionByUsername.Result).RunSynchronously();     
+                    }
+                    catch (Exception)
+                    {
+                        NlogClass.target.WriteAsyncLogEvent(new AsyncLogEventInfo(new LogEventInfo(LogLevel.Warn, "RemovePlayerCoin", "Database remove coin to player Failed [ Player claimed name : " + player.username + "] | Coin Used : "+ _coin), NlogClass.exceptions.Add));
+                    }     
+                    break;
+                default:
+                    NlogClass.target.WriteAsyncLogEvent(new AsyncLogEventInfo(new LogEventInfo(LogLevel.Error, "RemovePlayerCoin", "Client Username : " + myUser.Username + " | Unknown type of Coin to remove to player"), NlogClass.exceptions.Add));
+                    break;
+            }
+        }
+        
+        private async void  AddLootToPlayer(NeokyCollection NeokyUnit)
+        {
+            try
+            {
+                //Try Update the Collection Data
+                var dSTCollectionBySub = Server.dynamoDBServer.ScanForPlayerCollectionUsingSub(player.client_sub);
+
+                if (dSTCollectionBySub.Result.PlayerCollection.TryGetValue(NeokyUnit.collection_id , out var UnitDetails))
+                {
+                    // The unit Already Exist on the account
+                    // You should add a soul to that Unit
+                    UnitDetails[Constants.DB_COLLECTION_SOULS]++;
+                    NlogClass.target.WriteAsyncLogEvent(new AsyncLogEventInfo(new LogEventInfo(LogLevel.Error, "AddLootToPlayer", "Client Username : " + myUser.Username + " | New player Soul : "+ NeokyUnit.collection_id), NlogClass.exceptions.Add));
+                    await Server.dynamoDBServer.SaveOrUpdatNeokCollection(dSTCollectionBySub.Result);
+
+                }
+                else
+                {
+                    // The unit does not Exist on the account
+                    // You should create that Unit
+                    dSTCollectionBySub.Result.PlayerCollection.Add(NeokyUnit.collection_id, new Dictionary<string, int>
+                            {
+                                { Constants.DB_COLLECTION_ID_LVL , 1 },
+                                { Constants.DB_COLLECTION_SOULS , 1 }
+                            });
+                    NlogClass.target.WriteAsyncLogEvent(new AsyncLogEventInfo(new LogEventInfo(LogLevel.Error, "AddLootToPlayer", "Client Username : " + myUser.Username + " | New player Unit Creation : " + NeokyUnit.collection_id), NlogClass.exceptions.Add));
+                    await Server.dynamoDBServer.SaveOrUpdatNeokCollection(dSTCollectionBySub.Result);
+                }               
+            }
+            catch (Exception e)
+            {
+                NlogClass.target.WriteAsyncLogEvent(new AsyncLogEventInfo(new LogEventInfo(LogLevel.Warn, "AddLootToPlayer", "Database add Loot to player Failed [ Player claimed name : " + player.username + "]"), NlogClass.exceptions.Add));
+            }
+        }
+
+            /// <summary>Sends the client into the game and informs other clients of the new player.</summary>
+            /// <param name="_playerName">The username of the new player.</param>
         public void SendIntoGame(string _playerName, string _sceneToUnload)
         {
 

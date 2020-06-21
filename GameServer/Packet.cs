@@ -45,6 +45,7 @@ namespace GameServer
         updateCollection,
         unitAttack,
         attackPacket,
+        openCoin,
         //playerMovement,
     }
 

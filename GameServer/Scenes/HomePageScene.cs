@@ -14,8 +14,9 @@ namespace GameServer.Scenes
 
             // List of Scenes wich user can come from to claim access HomePage
             this.oldScenes = new List<string>();
-            oldScenes.Add("Authentication");            
-            oldScenes.Add("CollectionPage");            
+            oldScenes.Add(Constants.SCENE_AUTHENTICATION);            
+            oldScenes.Add(Constants.SCENE_COLLECTION);
+            oldScenes.Add(Constants.SCENE_LOOTS);
             oldScenes.Add("DJ_01_02");            
         }
     }

@@ -12,7 +12,8 @@ namespace GameServer.Scenes
         {
             this.sceneName = "CollectionPage";
             this.oldScenes = new List<string>();
-            this.oldScenes.Add("HomePage");
+            this.oldScenes.Add(Constants.SCENE_HOMEPAGE);
+            oldScenes.Add(Constants.SCENE_LOOTS);
         }
     }
 }

@@ -14,6 +14,8 @@ namespace GameServer
 
         public string collection_prefab { get; set; }
 
+        public int collection_quality { get; set; }
+
         public string collection_image { get; set; }
 
         public float attackDamages { get; set; }

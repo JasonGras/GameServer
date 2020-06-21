@@ -39,7 +39,7 @@ namespace GameServer
 
         public Dictionary<string, string> PlayerCrew { get; set; }
 
-        public Dictionary<string, int> box { get; set; }
+        public Dictionary<string, int> coin { get; set; }
 
         public Scene currentScene;
         public Scene unloadScene;

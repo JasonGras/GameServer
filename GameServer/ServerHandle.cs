@@ -1,5 +1,6 @@
 ﻿using Amazon.Extensions.CognitoAuthentication;
 using Amazon.SecurityToken.Model;
+using GameServer.Loots;
 using NLog;
 using NLog.Common;
 using NLog.Targets;
@@ -384,21 +385,27 @@ namespace GameServer
             }
         }
 
-        public static void AccessHomePageClientRequest(int _fromClient, Packet _packet)
+        public static void GetRandomLoot(int _fromClient, Packet _packet)
         {
             try
             {
                 int _clientIdCheck = _packet.ReadInt();
-                string _clientToken = _packet.ReadString();
+                UserSession _currentUserSession = _packet.ReadUserSession();
+                int _coinType = _packet.ReadInt();
+                int _coinQuality = _packet.ReadInt();
+                
 
                 if (_fromClient == _clientIdCheck)
                 {
-                    //Server.clients[_fromClient].AccessHomepage(_clientToken);
+
+                    Server.clients[_fromClient].GetRandomLoot(_coinType,_coinQuality, _currentUserSession);
+                    //CoinLoots coin = new CoinLoots();
+                    //coin.GetRandomLoot((CoinLoots.CoinAverageQuality)_coinQuality);
                 }
             }
             catch (Exception e)
             {
-                NlogClass.target.WriteAsyncLogEvent(new AsyncLogEventInfo(new LogEventInfo(LogLevel.Error, "AccessHomePageClientRequest",  "Client Username : "+ Server.clients[_fromClient].myUser.Username + " | Read the Packet failed | Exception : " + e ), NlogClass.exceptions.Add));
+                NlogClass.target.WriteAsyncLogEvent(new AsyncLogEventInfo(new LogEventInfo(LogLevel.Error, "GetRandomLoot",  "Client Username : "+ Server.clients[_fromClient].myUser.Username + " | Read the Packet failed | Exception : " + e ), NlogClass.exceptions.Add));
             }
         }
     }

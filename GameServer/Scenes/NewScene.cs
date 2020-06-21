@@ -9,12 +9,12 @@ namespace GameServer.Scenes
         // If you create a New Class Scene dont forget to add it to SceneManager
         public NewScene()
         {
-            this.sceneName = "NewScene";
+            this.sceneName = "SceneLoots";
 
             // List of Scenes wich user can come from to claim access HomePage
             this.oldScenes = new List<string>();
-            this.oldScenes.Add("Authentication");
-            this.oldScenes.Add("Blabla");
+            this.oldScenes.Add(Constants.SCENE_HOMEPAGE);
+            this.oldScenes.Add(Constants.SCENE_COLLECTION);
         }
     }
 }

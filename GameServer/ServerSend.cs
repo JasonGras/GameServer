@@ -108,8 +108,8 @@ namespace GameServer
                 _packet.Write(_player.currentScene.sceneName);
                 _packet.Write(_player.unloadScene.sceneName);
                 _packet.Write(_player.golds);
-                _packet.Write(_player.box.Count);
-                _packet.Write(_player.box);
+                _packet.Write(_player.coin.Count);
+                _packet.Write(_player.coin);
                 _packet.Write(_player.diams);
                 //_packet.Write(_player.);
                 //_packet.Write(_player.rotation);

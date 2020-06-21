@@ -6,6 +6,7 @@ using System.Net.Sockets;
 
 using GameServer.Scenes;
 using GameServer.Dungeon;
+using GameServer.Units;
 
 namespace GameServer
 {
@@ -36,6 +37,7 @@ namespace GameServer
 
             SceneManager.InitializeSceneData();
             DungeonManager.InitializeDungeonData();
+            UnitManager.InitializeUnitsData();
 
             // Initialisation du TCP Listener
             tcpListener = new TcpListener(IPAddress.Any, Port);
@@ -150,6 +152,7 @@ namespace GameServer
                 { (int)ClientPackets.FightPacket, ServerHandle.FightPacketReceieved },
                 { (int)ClientPackets.updateCollection, ServerHandle.PlayerAskCollection },
                 { (int)ClientPackets.attackPacket, ServerHandle.AttackPacketReceieved },
+                { (int)ClientPackets.openCoin, ServerHandle.GetRandomLoot },
                 //{ (int)ClientPackets.playerMovement, ServerHandle.PlayerMovement },
             };
             Console.WriteLine("Initialized packets.");
