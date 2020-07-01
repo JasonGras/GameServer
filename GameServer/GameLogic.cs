@@ -9,13 +9,16 @@ namespace GameServer
         /// <summary>Runs all game logic.</summary>
         public static void Update()
         {
-            /*foreach (Client _client in Server.clients.Values)
+            foreach (Client _client in Server.clients.Values)
             {
-                if (_client.player != null)
+                if (_client.player != null) // Si le client existe et si il a lancé une game
                 {
-                    _client.player.Update();
+                    if (_client.player.isInGame)
+                    {
+                        _client.player.FightManager.Update();
+                    }                    
                 }
-            }*/
+            }
 
             ThreadManager.UpdateMain();
         }

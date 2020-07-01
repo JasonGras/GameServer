@@ -3,6 +3,7 @@ using Amazon.DynamoDBv2.DataModel;
 using Amazon.DynamoDBv2.DocumentModel;
 using Amazon.DynamoDBv2.Model;
 using GameServer.Loots;
+using GameServer.Units;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -128,7 +129,7 @@ namespace GameServer
             return result.FirstOrDefault();
         }
 
-        public async Task<NeokyCollection> ScanForNeokyCollectionUsingCollectionID(string _collectionID)
+        /*public async Task<NeokyCollection> ScanForNeokyCollectionUsingCollectionID(string _collectionID)
         {
             var search = _context.ScanAsync<NeokyCollection>
             (
@@ -144,9 +145,27 @@ namespace GameServer
             );
             var result = await search.GetRemainingAsync();
             return result.FirstOrDefault();
-        }
+        }*/
 
-        public async Task<List<NeokyCollection>> ScanAllNeokyCollectionByQuality(int _UnitQUality)
+        /*public async Task<Unit> ScanForUnitUsingCollectionID(string _collectionID)
+        {
+            var search = _context.ScanAsync<Unit>
+            (
+                new[]
+                {
+                    new ScanCondition
+                    (
+                        nameof(Unit.UnitID),
+                        ScanOperator.Equal,
+                        _collectionID
+                    )
+                }
+            );
+            var result = await search.GetRemainingAsync();
+            return result.FirstOrDefault();
+        }*/
+
+        /*public async Task<List<NeokyCollection>> ScanAllNeokyCollectionByQuality(int _UnitQUality)
         {
             var search = _context.ScanAsync<NeokyCollection>
             (
@@ -162,6 +181,6 @@ namespace GameServer
             );
             var result = await search.GetRemainingAsync();
             return result;
-        }
+        }*/
     }
 }

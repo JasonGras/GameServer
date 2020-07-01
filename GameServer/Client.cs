@@ -20,6 +20,7 @@ using System.ComponentModel.DataAnnotations;
 using Amazon.CognitoIdentityProvider.Model;
 using GameServer.Loots;
 using System.Diagnostics;
+using GameServer.Units;
 
 namespace GameServer
 {
@@ -38,7 +39,8 @@ namespace GameServer
         public TCP tcp;
         public UDP udp;
 
-        public Dictionary<NeokyCollection, Dictionary<string, int>> PlayerCollection; // Detailed Unit Collection + Souls + Level .. (Characteristics)
+        //public Dictionary<NeokyCollection, Dictionary<string, int>> PlayerCollection; // Detailed Unit Collection + Souls + Level .. (Characteristics)
+        public Dictionary<Unit, Dictionary<string, int>> PlayerCollection; // Detailed Unit Collection + Souls + Level .. (Characteristics)
         public Dictionary<string, int> UnitsDetails;
       
 
@@ -323,19 +325,19 @@ namespace GameServer
             }
         }
         
-        private async void  AddLootToPlayer(NeokyCollection NeokyUnit)
+        private async void  AddLootToPlayer(Unit NeokyUnit)
         {
             try
             {
                 //Try Update the Collection Data
                 var dSTCollectionBySub = Server.dynamoDBServer.ScanForPlayerCollectionUsingSub(player.client_sub);
 
-                if (dSTCollectionBySub.Result.PlayerCollection.TryGetValue(NeokyUnit.collection_id , out var UnitDetails))
+                if (dSTCollectionBySub.Result.PlayerCollection.TryGetValue(NeokyUnit.UnitID , out var UnitDetails))
                 {
                     // The unit Already Exist on the account
                     // You should add a soul to that Unit
                     UnitDetails[Constants.DB_COLLECTION_SOULS]++;
-                    NlogClass.target.WriteAsyncLogEvent(new AsyncLogEventInfo(new LogEventInfo(LogLevel.Error, "AddLootToPlayer", "Client Username : " + myUser.Username + " | New player Soul : "+ NeokyUnit.collection_id), NlogClass.exceptions.Add));
+                    NlogClass.target.WriteAsyncLogEvent(new AsyncLogEventInfo(new LogEventInfo(LogLevel.Error, "AddLootToPlayer", "Client Username : " + myUser.Username + " | New player Soul : "+ NeokyUnit.UnitID), NlogClass.exceptions.Add));
                     await Server.dynamoDBServer.SaveOrUpdatNeokCollection(dSTCollectionBySub.Result);
 
                 }
@@ -343,12 +345,12 @@ namespace GameServer
                 {
                     // The unit does not Exist on the account
                     // You should create that Unit
-                    dSTCollectionBySub.Result.PlayerCollection.Add(NeokyUnit.collection_id, new Dictionary<string, int>
+                    dSTCollectionBySub.Result.PlayerCollection.Add(NeokyUnit.UnitID, new Dictionary<string, int>
                             {
                                 { Constants.DB_COLLECTION_ID_LVL , 1 },
                                 { Constants.DB_COLLECTION_SOULS , 1 }
                             });
-                    NlogClass.target.WriteAsyncLogEvent(new AsyncLogEventInfo(new LogEventInfo(LogLevel.Error, "AddLootToPlayer", "Client Username : " + myUser.Username + " | New player Unit Creation : " + NeokyUnit.collection_id), NlogClass.exceptions.Add));
+                    NlogClass.target.WriteAsyncLogEvent(new AsyncLogEventInfo(new LogEventInfo(LogLevel.Error, "AddLootToPlayer", "Client Username : " + myUser.Username + " | New player Unit Creation : " + NeokyUnit.UnitID), NlogClass.exceptions.Add));
                     await Server.dynamoDBServer.SaveOrUpdatNeokCollection(dSTCollectionBySub.Result);
                 }               
             }
@@ -459,7 +461,7 @@ namespace GameServer
         /// UPDATED 13/06/2020
         public void UpdatePlayerCollection(UserSession _currentUserSession)
         {
-            PlayerCollection = new Dictionary<NeokyCollection, Dictionary<string, int>>();
+            PlayerCollection = new Dictionary<Unit, Dictionary<string, int>>();
 
             OnSessionExpiredRenewTokens(_currentUserSession);
 
@@ -477,20 +479,20 @@ namespace GameServer
                         try
                         {
                             //Try Update the Collection Data
-                            var dSTCollectionByID = Server.dynamoDBServer.ScanForNeokyCollectionUsingCollectionID(UnitCollection.Key);
+                            var dSTCollectionByID = UnitManager.FindUnitByID(UnitCollection.Key);
 
                             foreach (var UnitCharacteristic in UnitCollection.Value)
                             {
                                 UnitsDetails.Add(UnitCharacteristic.Key, UnitCharacteristic.Value); // 1st Member , Neoky Collection Updated (Id, Stats)       
                             }
-                            PlayerCollection.Add(dSTCollectionByID.Result, UnitsDetails);
+                            PlayerCollection.Add(dSTCollectionByID, UnitsDetails);
                         }
                         catch (Exception e)
                         {
                             NlogClass.target.WriteAsyncLogEvent(new AsyncLogEventInfo(new LogEventInfo(LogLevel.Error, "UpdatePlayerCollection", "Client Username : " + myUser.Username + " | ScanForNeokyCollectionUsingCollectionID failed | Exception : " + e), NlogClass.exceptions.Add));
                         }
                     }
-                    ServerSend.SendPlayerCollection(id, PlayerCollection.Count, UnitsDetails.Count, PlayerCollection); // the .count are needed to read the Packet on Client Side
+                    ServerSend.SendPlayerUnitCollection(id, PlayerCollection.Count, UnitsDetails.Count, PlayerCollection); // the .count are needed to read the Packet on Client Side
                 }
                 catch (Exception e)
                 {

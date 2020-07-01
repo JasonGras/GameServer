@@ -6,7 +6,7 @@ using Amazon.DynamoDBv2.DataModel;
 
 namespace GameServer
 {
-    [DynamoDBTable("Collection")]
+    /*[DynamoDBTable("Collection")]
     public class NeokyCollection
     {
         [DynamoDBHashKey]
@@ -28,6 +28,9 @@ namespace GameServer
 
         [DynamoDBIgnore]
         public bool isSpawned { get; set; } = false;
-        
-    }
+
+        [DynamoDBIgnore]
+        public float turnMeter { get; set; } = 0;
+
+    }*/
 }

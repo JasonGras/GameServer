@@ -1,4 +1,5 @@
-﻿using System;
+﻿using GameServer.Units;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -11,7 +12,8 @@ namespace GameServer.Scenes
         // List of Scenes wich user can come from to claim access HomePage
         public List<string> oldScenes { get; set; }
 
-        public Dictionary<int, NeokyCollection> enemyCrewMember { get; set; }
+        //public Dictionary<int, NeokyCollection> enemyCrewMember { get; set; }
+        public Dictionary<int, Unit> enemyUnitCrewMember { get; set; }
 
     }
 

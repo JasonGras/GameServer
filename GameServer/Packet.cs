@@ -1,4 +1,5 @@
 ﻿using Amazon.Extensions.CognitoAuthentication;
+using GameServer.Units;
 using System;
 using System.Collections.Generic;
 using System.Numerics;
@@ -208,7 +209,43 @@ namespace GameServer
         }
         /// <summary>Adds a Dictionary<int, NeokyCollection> to the packet.</summary>
         /// <param name="_value">The Vector3 to add.</param>
-        public void Write(Dictionary<int, NeokyCollection> _value)
+        /*public void Write(Dictionary<int, NeokyCollection> _value)
+        {
+            foreach (var item in _value)
+            {
+                Write(item.Key);
+                Write(item.Value);
+            }
+        }*/
+        /// <summary>Adds a Dictionary<int, NeokyCollection> to the packet.</summary>
+        /// <param name="_value">The Vector3 to add.</param>
+        public void Write(Dictionary<int, Unit> _value)
+        {
+            foreach (var item in _value)
+            {
+                Write(item.Key);
+                Write(item.Value);
+            }
+        }
+        /// <summary>Adds a NeokyCollection to the packet.</summary>
+        /// <param name="_value">The Vector3 to add.</param>
+        public void Write(Unit _value)
+        {
+            Write(_value.UnitName);
+            Write(_value.UnitLevel);
+            Write(_value.UnitPrefab);
+            Write(_value.UnitImage);
+            Write(_value.UnitPower);
+            Write(_value.UnitVelocity);
+            Write(_value.UnitHp);
+            Write(_value.turnMeter);
+            Write(_value.UnitQuality);
+            Write(_value.UnitTribe);
+        }
+
+        /// <summary>Adds a Dictionary<int, NeokyCollection> to the packet.</summary>
+        /// <param name="_value">The Vector3 to add.</param>
+        public void Write(Dictionary<Unit, Dictionary<string, int>> _value)
         {
             foreach (var item in _value)
             {
@@ -218,14 +255,14 @@ namespace GameServer
         }
         /// <summary>Adds a Dictionary<int, NeokyCollection> to the packet.</summary>
         /// <param name="_value">The Vector3 to add.</param>
-        public void Write(Dictionary<NeokyCollection,Dictionary<string, int>> _value)
+        /*public void Write(Dictionary<NeokyCollection,Dictionary<string, int>> _value)
         {
             foreach (var item in _value)
             {
                 Write(item.Key);
                 Write(item.Value);
             }
-        }
+        }*/
         /// <summary>Adds a Dictionary<int, NeokyCollection> to the packet.</summary>
         /// <param name="_value">The Vector3 to add.</param>
         public void Write(Dictionary<string, int> _value)
@@ -238,7 +275,7 @@ namespace GameServer
         }
         /// <summary>Adds a NeokyCollection to the packet.</summary>
         /// <param name="_value">The Vector3 to add.</param>
-        public void Write(NeokyCollection _value)
+        /*public void Write(NeokyCollection _value)
         {
             Write(_value.collection_name);
             Write(_value.collection_prefab);
@@ -246,7 +283,7 @@ namespace GameServer
             Write(_value.attackDamages);            
             Write(_value.attackSpeed);
             Write(_value.lifePoints);
-        }
+        }*/
         /// <summary>Adds a Quaternion to the packet.</summary>
         /// <param name="_value">The Quaternion to add.</param>
         public void Write(Quaternion _value)

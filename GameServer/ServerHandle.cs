@@ -1,6 +1,7 @@
 ﻿using Amazon.Extensions.CognitoAuthentication;
 using Amazon.SecurityToken.Model;
 using GameServer.Loots;
+using GameServer.TurnBasedFights;
 using NLog;
 using NLog.Common;
 using NLog.Targets;
@@ -254,7 +255,7 @@ namespace GameServer
                                 break;
                             case "FIGHT_READY":
                                 // Check if player is in right to Init a fight
-                                //Server.clients[_fromClient].setFight();
+                                Server.clients[_fromClient].player.FightManager.isClientInitOver = true;                                
                                 break;
 
                             default:

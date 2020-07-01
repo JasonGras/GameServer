@@ -10,6 +10,10 @@ using Amazon.DynamoDBv2.DataModel;
 using GameServer.Scenes;
 using NLog.Common;
 using NLog;
+using System.Linq;
+using NLog.Targets;
+using GameServer.Units;
+using GameServer.TurnBasedFights;
 
 namespace GameServer
 {
@@ -45,8 +49,21 @@ namespace GameServer
         public Scene unloadScene;
 
         // SetFight Variables
-        public Dictionary<int, NeokyCollection> NeokyCollection_PlayerCrew; // Crew defined by the player for the Fights
-        public Dictionary<int, NeokyCollection> NeokyCollection_EnemyCrew; // Crew defined by the Dungeon for the Scene Fight
+        public Dictionary<int, Unit> Unit_PlayerCrew; // Crew defined by the player for the Fights
+        public Dictionary<int, Unit> Unit_EnemyCrew; // Crew defined by the player for the Fights
+
+        public NewFight FightManager;
+
+        //public Dictionary<int, NeokyCollection> NeokyCollection_PlayerCrew; // Crew defined by the player for the Fights
+        //public Dictionary<int, NeokyCollection> NeokyCollection_EnemyCrew; // Crew defined by the Dungeon for the Scene Fight
+
+        public List<Unit> sortedUnits;
+
+        public bool isInGame = false;
+
+        public enum BattleState { INIT_FIGHT, PLAYER_TURN, ENEMY_TURN, WON, LOST }
+
+        public BattleState currentBattleState;
 
         //public string currentScene;
         //public string oldScene;
@@ -145,8 +162,7 @@ namespace GameServer
                 if (_dungeonFound.playerCanAccessDungeon(level))
                 {   //Player have the right level for this Dungeon                    
                     if (_dungeonFound.playerCanAccessDesiredDungeonMap(_dungeonFound,currentScene.sceneName))
-                    {   // Dungeon Spawn Scene exist for this Dungeon & Player is on the Right CurrentScene to Access it
-
+                    {   // Dungeon Spawn Scene exist for this Dungeon & Player is on the Right CurrentScene to Access it                        
                         ServerSend.SwitchToScene(_clientID, _dungeonFound.spawnScene, currentScene);
                         // Update Current Scene
                         currentScene = _dungeonFound.spawnScene;
@@ -166,8 +182,13 @@ namespace GameServer
                 NlogClass.target.WriteAsyncLogEvent(new AsyncLogEventInfo(new LogEventInfo(LogLevel.Warn, "PlayerEnterDungeon", "Player [" + username + "] try to access to a Dungeon wich does not exist ["+ _desiredDungeon + "]"), NlogClass.exceptions.Add));
             }
         }
+        
+        /*/// <summary>Processes player inputs on Fights.</summary>
+        public void Update()
+        {
 
-        /// <summary>Processes player input and moves the player.</summary>
+        }*/
+        
         //public void Update()
         //{
         /*Vector2 _inputDirection = Vector2.Zero;
@@ -195,354 +216,71 @@ namespace GameServer
         /// <param name="_clientId">The Client Id, trace client for the Logs</param>
         /// UPDATED 13/06/2020
         public void SetFight(int _clientId)
-        {       
-            SetEnemyCrew(_clientId);
-            SetPlayerCrew(_clientId);            
-        }
-
-        /// <summary>Set the NeokyCollection_EnemyCrew for the Scene Fight</summary>
-        /// <param name="_clientId">The Client Id, trace client for the Logs</param>
-        /// UPDATED 13/06/2020
-        private void SetEnemyCrew(int _clientId)
         {
-            NeokyCollection_EnemyCrew = new Dictionary<int, NeokyCollection>();
+            FightManager = new NewFight();
+            isInGame = true;
 
-            if (currentScene.enemyCrewMember != null)
-            {
-                // Foreach to Set Up the Enemy Crew
-                foreach (var item in currentScene.enemyCrewMember)
-                {
-                    switch (item.Key)
-                    {
-                        case 1:
-                            // In case the 1st Member of the crew is Set 
-                            if (item.Value != null)
-                            {   // If the value "Exists" / is a Real Value
-                                try
-                                {
-                                    //Try Update the Collection Data
-                                    var dSTByID = Server.dynamoDBServer.ScanForNeokyCollectionUsingCollectionID(item.Value.collection_id);
-                                    dSTByID.Result.isSpawned = true;
-                                    NeokyCollection_EnemyCrew.Add(1, dSTByID.Result); // 1st Member , Neoky Collection Updated (Id, Stats)
-                                }
-                                catch (Exception e)
-                                {
-                                    NlogClass.target.WriteAsyncLogEvent(new AsyncLogEventInfo(new LogEventInfo(LogLevel.Error, "SetFight", "Client Name : " + Server.clients[_clientId].myUser.Username + " | Failed the ScanForNeokyCollectionUsingCollectionID for Enemy Unit N° 1 of the Fight for the Scene : " + Server.clients[_clientId].player.currentScene.sceneName + " | Exception : " + e), NlogClass.exceptions.Add));
-                                    // Abort the Fight
-                                }
-                            }
-                            else
-                            {
-                                NlogClass.target.WriteAsyncLogEvent(new AsyncLogEventInfo(new LogEventInfo(LogLevel.Error, "SetFight", "Client Name : " + Server.clients[_clientId].myUser.Username + " | Enemy Unit N° 1 of the Fight is Null for the Scene : " + Server.clients[_clientId].player.currentScene.sceneName), NlogClass.exceptions.Add));
-                            }
-                            break;
-                        case 2:
-                            // In case the 1st Member of the crew is Set 
-                            if (item.Value != null)
-                            {   // If the value "Exists" / is a Real Value
-                                try
-                                {
-                                    //Try Update the Collection Data
-                                    var dSTByID = Server.dynamoDBServer.ScanForNeokyCollectionUsingCollectionID(item.Value.collection_id);
-                                    dSTByID.Result.isSpawned = true;
-                                    NeokyCollection_EnemyCrew.Add(2, dSTByID.Result); // 1st Member , Neoky Collection Updated (Id, Stats)
-                                }
-                                catch (Exception e)
-                                {
-                                    NlogClass.target.WriteAsyncLogEvent(new AsyncLogEventInfo(new LogEventInfo(LogLevel.Error, "SetFight", "Client Name : " + Server.clients[_clientId].myUser.Username + " | Failed the ScanForNeokyCollectionUsingCollectionID for Enemy Unit N° 2 of the Fight for the Scene : " + Server.clients[_clientId].player.currentScene.sceneName + " | Exception : " + e), NlogClass.exceptions.Add));
-                                    // Abort the Fight
-                                }
-                            }
-                            else
-                            {
-                                NlogClass.target.WriteAsyncLogEvent(new AsyncLogEventInfo(new LogEventInfo(LogLevel.Error, "SetFight", "Client Name : " + Server.clients[_clientId].myUser.Username + " | Enemy Unit N° 2 of the Fight is Null for the Scene : " + Server.clients[_clientId].player.currentScene.sceneName), NlogClass.exceptions.Add));
-                            }
-                            break;
-                        case 3:
-                            // In case the 1st Member of the crew is Set 
-                            if (item.Value != null)
-                            {   // If the value "Exists" / is a Real Value
-                                try
-                                {
-                                    //Try Update the Collection Data
-                                    var dSTByID = Server.dynamoDBServer.ScanForNeokyCollectionUsingCollectionID(item.Value.collection_id);
-                                    dSTByID.Result.isSpawned = true;
-                                    NeokyCollection_EnemyCrew.Add(3, dSTByID.Result); // 1st Member , Neoky Collection Updated (Id, Stats)
-                                }
-                                catch (Exception e)
-                                {
-                                    NlogClass.target.WriteAsyncLogEvent(new AsyncLogEventInfo(new LogEventInfo(LogLevel.Error, "SetFight", "Client Name : " + Server.clients[_clientId].myUser.Username + " | Failed the ScanForNeokyCollectionUsingCollectionID for Enemy Unit N° 3 of the Fight for the Scene : " + Server.clients[_clientId].player.currentScene.sceneName + " | Exception : " + e), NlogClass.exceptions.Add));
-                                    // Abort the Fight
-                                }
-                            }
-                            else
-                            {
-                                NlogClass.target.WriteAsyncLogEvent(new AsyncLogEventInfo(new LogEventInfo(LogLevel.Error, "SetFight", "Client Name : " + Server.clients[_clientId].myUser.Username + " | Enemy Unit N° 3 of the Fight is Null for the Scene : " + Server.clients[_clientId].player.currentScene.sceneName), NlogClass.exceptions.Add));
-                            }
-                            break;
-                        case 4:
-                            // In case the 1st Member of the crew is Set 
-                            if (item.Value != null)
-                            {   // If the value "Exists" / is a Real Value
-                                try
-                                {
-                                    //Try Update the Collection Data
-                                    var dSTByID = Server.dynamoDBServer.ScanForNeokyCollectionUsingCollectionID(item.Value.collection_id);
-                                    dSTByID.Result.isSpawned = true;
-                                    NeokyCollection_EnemyCrew.Add(4, dSTByID.Result); // 1st Member , Neoky Collection Updated (Id, Stats)
-                                }
-                                catch (Exception e)
-                                {
-                                    NlogClass.target.WriteAsyncLogEvent(new AsyncLogEventInfo(new LogEventInfo(LogLevel.Error, "SetFight", "Client Name : " + Server.clients[_clientId].myUser.Username + " | Failed the ScanForNeokyCollectionUsingCollectionID for Enemy Unit N° 4 of the Fight for the Scene : " + Server.clients[_clientId].player.currentScene.sceneName + " | Exception : " + e), NlogClass.exceptions.Add));
-                                    // Abort the Fight
-                                }
-                            }
-                            else
-                            {
-                                NlogClass.target.WriteAsyncLogEvent(new AsyncLogEventInfo(new LogEventInfo(LogLevel.Error, "SetFight", "Client Name : " + Server.clients[_clientId].myUser.Username + " | Enemy Unit N° 4 of the Fight is Null for the Scene : " + Server.clients[_clientId].player.currentScene.sceneName), NlogClass.exceptions.Add));
-                            }
-                            break;
-                        case 5:
-                            // In case the 1st Member of the crew is Set 
-                            if (item.Value != null)
-                            {   // If the value "Exists" / is a Real Value
-                                try
-                                {
-                                    //Try Update the Collection Data
-                                    var dSTByID = Server.dynamoDBServer.ScanForNeokyCollectionUsingCollectionID(item.Value.collection_id);
-                                    dSTByID.Result.isSpawned = true;
-                                    NeokyCollection_EnemyCrew.Add(5, dSTByID.Result); // 1st Member , Neoky Collection Updated (Id, Stats)
-                                }
-                                catch (Exception e)
-                                {
-                                    NlogClass.target.WriteAsyncLogEvent(new AsyncLogEventInfo(new LogEventInfo(LogLevel.Error, "SetFight", "Client Name : " + Server.clients[_clientId].myUser.Username + " | Failed the ScanForNeokyCollectionUsingCollectionID for Enemy Unit N° 5 of the Fight for the Scene : " + Server.clients[_clientId].player.currentScene.sceneName + " | Exception : " + e), NlogClass.exceptions.Add));
-                                    // Abort the Fight
-                                }
-                            }
-                            else
-                            {
-                                NlogClass.target.WriteAsyncLogEvent(new AsyncLogEventInfo(new LogEventInfo(LogLevel.Error, "SetFight", "Client Name : " + Server.clients[_clientId].myUser.Username + " | Enemy Unit N° 5 of the Fight is Null for the Scene : " + Server.clients[_clientId].player.currentScene.sceneName), NlogClass.exceptions.Add));
-                            }
-                            break;
-                        case 6:
-                            // In case the 1st Member of the crew is Set 
-                            if (item.Value != null)
-                            {   // If the value "Exists" / is a Real Value
-                                try
-                                {
-                                    //Try Update the Collection Data
-                                    var dSTByID = Server.dynamoDBServer.ScanForNeokyCollectionUsingCollectionID(item.Value.collection_id);
-                                    dSTByID.Result.isSpawned = true;
-                                    NeokyCollection_EnemyCrew.Add(6, dSTByID.Result); // 1st Member , Neoky Collection Updated (Id, Stats)
-                                }
-                                catch (Exception e)
-                                {
-                                    NlogClass.target.WriteAsyncLogEvent(new AsyncLogEventInfo(new LogEventInfo(LogLevel.Error, "SetFight", "Client Name : " + Server.clients[_clientId].myUser.Username + " | Failed the ScanForNeokyCollectionUsingCollectionID for Enemy Unit N° 6 of the Fight for the Scene : " + Server.clients[_clientId].player.currentScene.sceneName + " | Exception : " + e), NlogClass.exceptions.Add));
-                                    // Abort the Fight
-                                }
-                            }
-                            else
-                            {
-                                NlogClass.target.WriteAsyncLogEvent(new AsyncLogEventInfo(new LogEventInfo(LogLevel.Error, "SetFight", "Client Name : " + Server.clients[_clientId].myUser.Username + " | Enemy Unit N° 6 of the Fight is Null for the Scene : " + Server.clients[_clientId].player.currentScene.sceneName), NlogClass.exceptions.Add));
-                            }
-                            break;
-                        default:
-                            NlogClass.target.WriteAsyncLogEvent(new AsyncLogEventInfo(new LogEventInfo(LogLevel.Error, "SetFight", "Client Name : " + Server.clients[_clientId].myUser.Username + " | Enemy Unit N° is not between [1 and 6] for the Scene : " + Server.clients[_clientId].player.currentScene.sceneName), NlogClass.exceptions.Add));
-                            break;
-                    }
-                }
-            }
-            else
-            {
-                NlogClass.target.WriteAsyncLogEvent(new AsyncLogEventInfo(new LogEventInfo(LogLevel.Error, "SetFight", "Client Name : " + Server.clients[_clientId].myUser.Username + " | Enemy Crew Member is Empty for the Scene : " + Server.clients[_clientId].player.currentScene.sceneName), NlogClass.exceptions.Add));
-            }
-            ServerSend.SpawnEnemyAllCrew(_clientId, NeokyCollection_EnemyCrew.Count, NeokyCollection_EnemyCrew);
-        }
-
-        /// <summary>Set the NeokyCollection_PlayerCrew for the Scene Fight</summary>
-        /// <param name="_clientId">The Client Id, trace client for the Logs</param>
-        /// UPDATED 13/06/2020
-        private void SetPlayerCrew(int _clientId)
-        {
-            NeokyCollection_PlayerCrew = new Dictionary<int, NeokyCollection>();
-
-            if (PlayerCrew != null)
-            {
-                // Foreach to Set Up the Player Crew
-                foreach (var item in PlayerCrew)
-                {
-                    switch (item.Key)
-                    {
-                        case "Member_01":
-                            // In case the 1st Member of the crew is Set 
-                            if (item.Value != null)
-                            {   // If the value "Exists" / is a Real Value
-                                try
-                                {
-                                    //Try Update the Collection Data
-                                    var dynamoScanTask = Server.dynamoDBServer.ScanForNeokyCollectionUsingCollectionID(item.Value);
-                                    dynamoScanTask.Result.isSpawned = true;
-                                    NeokyCollection_PlayerCrew.Add(1, dynamoScanTask.Result); // 1st Member , Neoky Collection Updated (Id, Stats)                                   
-                                }
-                                catch (Exception e)
-                                {
-                                    NlogClass.target.WriteAsyncLogEvent(new AsyncLogEventInfo(new LogEventInfo(LogLevel.Error, "SetFight", "Client Name : " + Server.clients[_clientId].myUser.Username + " | Failed the ScanForNeokyCollectionUsingCollectionID for Player Unit N° 1 of the Fight for the Scene : " + Server.clients[_clientId].player.currentScene.sceneName + " | Exception : " + e), NlogClass.exceptions.Add));
-                                    // Abort the Fight
-                                }
-                            }
-                            else
-                            {
-                                NlogClass.target.WriteAsyncLogEvent(new AsyncLogEventInfo(new LogEventInfo(LogLevel.Error, "SetFight", "Client Name : " + Server.clients[_clientId].myUser.Username + " | Player Unit N° 1 of the Fight is Null for the Scene : " + Server.clients[_clientId].player.currentScene.sceneName), NlogClass.exceptions.Add));
-                            }
-                            break;
-                        case "Member_02":
-                            // In case the 1st Member of the crew is Set 
-                            if (item.Value != null)
-                            {   // If the value "Exists" / is a Real Value
-                                try
-                                {
-                                    //Try Update the Collection Data
-                                    var dynamoScanTask = Server.dynamoDBServer.ScanForNeokyCollectionUsingCollectionID(item.Value);
-                                    dynamoScanTask.Result.isSpawned = true;
-                                    NeokyCollection_PlayerCrew.Add(2, dynamoScanTask.Result); // 1st Member , Neoky Collection Updated (Id, Stats)
-                                }
-                                catch (Exception e)
-                                {
-                                    NlogClass.target.WriteAsyncLogEvent(new AsyncLogEventInfo(new LogEventInfo(LogLevel.Error, "SetFight", "Client Name : " + Server.clients[_clientId].myUser.Username + " | Failed the ScanForNeokyCollectionUsingCollectionID for Player Unit N° 2 of the Fight for the Scene : " + Server.clients[_clientId].player.currentScene.sceneName + " | Exception : " + e), NlogClass.exceptions.Add));
-                                    // Abort the Fight
-                                }
-                            }
-                            else
-                            {
-                                NlogClass.target.WriteAsyncLogEvent(new AsyncLogEventInfo(new LogEventInfo(LogLevel.Error, "SetFight", "Client Name : " + Server.clients[_clientId].myUser.Username + " | Player Unit N° 2 of the Fight is Null for the Scene : " + Server.clients[_clientId].player.currentScene.sceneName), NlogClass.exceptions.Add));
-                            }
-                            break;
-                        case "Member_03":
-                            // In case the 1st Member of the crew is Set 
-                            if (item.Value != null)
-                            {   // If the value "Exists" / is a Real Value
-                                try
-                                {
-                                    //Try Update the Collection Data
-                                    var dynamoScanTask = Server.dynamoDBServer.ScanForNeokyCollectionUsingCollectionID(item.Value);
-                                    dynamoScanTask.Result.isSpawned = true;
-                                    NeokyCollection_PlayerCrew.Add(3, dynamoScanTask.Result); // 1st Member , Neoky Collection Updated (Id, Stats)
-                                }
-                                catch (Exception e)
-                                {
-                                    NlogClass.target.WriteAsyncLogEvent(new AsyncLogEventInfo(new LogEventInfo(LogLevel.Error, "SetFight", "Client Name : " + Server.clients[_clientId].myUser.Username + " | Failed the ScanForNeokyCollectionUsingCollectionID for Player Unit N° 3 of the Fight for the Scene : " + Server.clients[_clientId].player.currentScene.sceneName + " | Exception : " + e), NlogClass.exceptions.Add));
-                                    // Abort the Fight
-                                }
-                            }
-                            else
-                            {
-                                NlogClass.target.WriteAsyncLogEvent(new AsyncLogEventInfo(new LogEventInfo(LogLevel.Error, "SetFight", "Client Name : " + Server.clients[_clientId].myUser.Username + " | Player Unit N° 3 of the Fight is Null for the Scene : " + Server.clients[_clientId].player.currentScene.sceneName), NlogClass.exceptions.Add));
-                            }
-                            break;
-                        case "Member_04":
-                            // In case the 1st Member of the crew is Set 
-                            if (item.Value != null)
-                            {   // If the value "Exists" / is a Real Value
-                                try
-                                {
-                                    //Try Update the Collection Data
-                                    var dynamoScanTask = Server.dynamoDBServer.ScanForNeokyCollectionUsingCollectionID(item.Value);
-                                    dynamoScanTask.Result.isSpawned = true;
-                                    NeokyCollection_PlayerCrew.Add(4, dynamoScanTask.Result); // 1st Member , Neoky Collection Updated (Id, Stats)
-                                }
-                                catch (Exception e)
-                                {
-                                    NlogClass.target.WriteAsyncLogEvent(new AsyncLogEventInfo(new LogEventInfo(LogLevel.Error, "SetFight", "Client Name : " + Server.clients[_clientId].myUser.Username + " | Failed the ScanForNeokyCollectionUsingCollectionID for Player Unit N° 4 of the Fight for the Scene : " + Server.clients[_clientId].player.currentScene.sceneName + " | Exception : " + e), NlogClass.exceptions.Add));
-                                    // Abort the Fight
-                                }
-                            }
-                            else
-                            {
-                                NlogClass.target.WriteAsyncLogEvent(new AsyncLogEventInfo(new LogEventInfo(LogLevel.Error, "SetFight", "Client Name : " + Server.clients[_clientId].myUser.Username + " | Player Unit N° 4 of the Fight is Null for the Scene : " + Server.clients[_clientId].player.currentScene.sceneName), NlogClass.exceptions.Add));
-                            }
-                            break;
-                        case "Member_05":
-                            // In case the 1st Member of the crew is Set 
-                            if (item.Value != null)
-                            {   // If the value "Exists" / is a Real Value
-                                try
-                                {
-                                    //Try Update the Collection Data
-                                    var dynamoScanTask = Server.dynamoDBServer.ScanForNeokyCollectionUsingCollectionID(item.Value);
-                                    dynamoScanTask.Result.isSpawned = true;
-                                    NeokyCollection_PlayerCrew.Add(5, dynamoScanTask.Result); // 1st Member , Neoky Collection Updated (Id, Stats)
-                                }
-                                catch (Exception e)
-                                {
-                                    NlogClass.target.WriteAsyncLogEvent(new AsyncLogEventInfo(new LogEventInfo(LogLevel.Error, "SetFight", "Client Name : " + Server.clients[_clientId].myUser.Username + " | Failed the ScanForNeokyCollectionUsingCollectionID for Player Unit N° 5 of the Fight for the Scene : " + Server.clients[_clientId].player.currentScene.sceneName + " | Exception : " + e), NlogClass.exceptions.Add));
-                                    // Abort the Fight
-                                }
-                            }
-                            else
-                            {
-                                NlogClass.target.WriteAsyncLogEvent(new AsyncLogEventInfo(new LogEventInfo(LogLevel.Error, "SetFight", "Client Name : " + Server.clients[_clientId].myUser.Username + " | Player Unit N° 5 of the Fight is Null for the Scene : " + Server.clients[_clientId].player.currentScene.sceneName), NlogClass.exceptions.Add));
-                            }
-                            break;
-                        case "Member_06":
-                            // In case the 1st Member of the crew is Set 
-                            if (item.Value != null)
-                            {   // If the value "Exists" / is a Real Value
-                                try
-                                {
-                                    //Try Update the Collection Data
-                                    var dynamoScanTask = Server.dynamoDBServer.ScanForNeokyCollectionUsingCollectionID(item.Value);
-                                    dynamoScanTask.Result.isSpawned = true;
-                                    NeokyCollection_PlayerCrew.Add(6, dynamoScanTask.Result); // 1st Member , Neoky Collection Updated (Id, Stats)
-                                }
-                                catch (Exception e)
-                                {
-                                    NlogClass.target.WriteAsyncLogEvent(new AsyncLogEventInfo(new LogEventInfo(LogLevel.Error, "SetFight", "Client Name : " + Server.clients[_clientId].myUser.Username + " | Failed the ScanForNeokyCollectionUsingCollectionID for Player Unit N° 6 of the Fight for the Scene : " + Server.clients[_clientId].player.currentScene.sceneName + " | Exception : " + e), NlogClass.exceptions.Add));
-                                    // Abort the Fight
-                                }
-                            }
-                            else
-                            {
-                                NlogClass.target.WriteAsyncLogEvent(new AsyncLogEventInfo(new LogEventInfo(LogLevel.Error, "SetFight", "Client Name : " + Server.clients[_clientId].myUser.Username + " | Player Unit N° 6 of the Fight is Null for the Scene : " + Server.clients[_clientId].player.currentScene.sceneName), NlogClass.exceptions.Add));
-                            }
-                            break;
-                        default:
-                            NlogClass.target.WriteAsyncLogEvent(new AsyncLogEventInfo(new LogEventInfo(LogLevel.Error, "SetFight", "Client Name : " + Server.clients[_clientId].myUser.Username + " | PlayerCrew N° is not between [1 and 6] for the Scene : " + Server.clients[_clientId].player.currentScene.sceneName), NlogClass.exceptions.Add));
-                            break;
-                    }
-
-                }
-            }
-            else
-            {
-                NlogClass.target.WriteAsyncLogEvent(new AsyncLogEventInfo(new LogEventInfo(LogLevel.Error, "SetFight", "Client Name : " + Server.clients[_clientId].myUser.Username + " | PlayerCrew is Empty for the Scene : " + Server.clients[_clientId].player.currentScene.sceneName), NlogClass.exceptions.Add));
-            }
-            ServerSend.SpawnPlayerAllCrew(_clientId, NeokyCollection_PlayerCrew.Count, NeokyCollection_PlayerCrew);
-        }
+            FightManager.InstantiateEnemyUnitsCrew(_clientId, currentScene);
+            FightManager.InstantiatePlayerUnitsCrew(_clientId, PlayerCrew);    
+            
+        }       
 
         public void UnitPlayerAttack(int _clientId, int _unitPosition, int _unitTarget)
-        {
-            NeokyCollection _CurrentUnit = new NeokyCollection();
-            NeokyCollection _CurrentTarget = new NeokyCollection();
+        {                    
 
-            if (NeokyCollection_PlayerCrew.TryGetValue(_unitPosition, out _CurrentUnit))
-            {
-                if (NeokyCollection_EnemyCrew.TryGetValue(_unitTarget, out _CurrentTarget))
+            Unit _CurrentUnit = new Unit();
+            Unit _CurrentTarget = new Unit();
+
+            //Console.WriteLine("Unit Player Attack");
+            if (currentBattleState == BattleState.PLAYER_TURN)
+            {                
+                if (Unit_PlayerCrew.TryGetValue(_unitPosition, out _CurrentUnit))
                 {
-                    if (_CurrentTarget.isSpawned && _CurrentUnit.isSpawned)
+                    if (Unit_EnemyCrew.TryGetValue(_unitTarget, out _CurrentTarget))
                     {
-                        // Target & Player Unit are Spawned
-                        if (_CurrentTarget.lifePoints > 0 && _CurrentUnit.lifePoints > 0)
-                        {
-                            // Target & Player Unit are Alive
-                            _CurrentTarget.lifePoints -= _CurrentUnit.attackDamages;
-                            // Does target Die ? 
-                            // Does Fight is Win ? 
-                            Console.WriteLine(_CurrentUnit.collection_name + " deal " + _CurrentUnit.attackDamages.ToString() + " to the Enemy unit " + _CurrentTarget.collection_name);
-                            ServerSend.AttackUnit(_clientId, _unitPosition, _unitTarget);
+                        if (_CurrentTarget.isSpawned && _CurrentUnit.isSpawned)
+                        {                           
+                            // Target & Player Unit are Spawned
+                            if (_CurrentTarget.UnitHp > 0 && _CurrentUnit.UnitHp > 0)
+                            {
+                                Console.WriteLine(_CurrentUnit.UnitName + " deal " + _CurrentUnit.UnitPower.ToString() + " to the Enemy unit " + _CurrentTarget.UnitName);
+                                ServerSend.AttackUnit(_clientId, _unitPosition, _unitTarget);
+                                // Target & Player Unit are Alive
+
+                                _CurrentTarget.UnitHp -= _CurrentUnit.UnitPower;
+                                if (_CurrentTarget.UnitHp <= 0)
+                                {
+                                    //TargetDied
+                                    // Check If Win
+                                    foreach (var Unit in Unit_EnemyCrew)
+                                    {
+                                        if (Unit.Value.UnitHp > 0)
+                                        {
+
+                                        }
+                                        else
+                                        {
+                                            currentBattleState = BattleState.WON;
+                                        }
+                                    }
+                                }
+                                else
+                                {
+                                    currentBattleState = BattleState.ENEMY_TURN;
+                                    // EndPlayerTurn
+                                }
+
+                            }
                         }
                     }
                 }
+                //sortedUnits = GetUnitsSortedByTurnMeter();
+                // Update units Parameters (Hp, TurnMeter..)
             }
+
+
+
         }
+
     }
 }

@@ -4,19 +4,20 @@ using System.Text;
 
 using GameServer.Scenes;
 using GameServer.Dungeon;
+using GameServer.Units;
 
 namespace GameServer.Dungeon.Dungeon_01
 {
     class FirstDungeon : Dungeon
     {
-       public Dictionary<string, Dictionary<int, NeokyCollection>> dungeonWaves { get; set; }
+       public Dictionary<string, Dictionary<int, Unit>> dungeonWaves { get; set; }
         
 
         public FirstDungeon()
         {
             // Set an Instance Name
             this.instanceName = "instance_01_name";
-            this.dungeonWaves = new Dictionary<string, Dictionary<int, NeokyCollection>>();
+            this.dungeonWaves = new Dictionary<string, Dictionary<int, Unit>>();
             // This First Dungeon is Accessible from lvl 5.
             this.minLvlAccess = 1;
 
@@ -30,22 +31,24 @@ namespace GameServer.Dungeon.Dungeon_01
 
 
             DJ_01_01.sceneName = "DJ_01_01";
-            DJ_01_01.enemyCrewMember = new Dictionary<int, NeokyCollection>();
-            DJ_01_01.enemyCrewMember.Add(1, new NeokyCollection { collection_id = "arthur_id", collection_name = "Arthur", attackDamages = 5, attackSpeed = 20, collection_prefab = "arthur_01", lifePoints = 500 });
-            DJ_01_01.enemyCrewMember.Add(2, new NeokyCollection { collection_id = "arthur_id", collection_name = "Arthur", attackDamages = 5, attackSpeed = 20, collection_prefab = "arthur_01", lifePoints = 500 });
-            DJ_01_01.enemyCrewMember.Add(3, new NeokyCollection { collection_id = "arthur_id", collection_name = "Arthur", attackDamages = 5, attackSpeed = 20, collection_prefab = "arthur_01", lifePoints = 500 });
-            DJ_01_01.enemyCrewMember.Add(4, new NeokyCollection { collection_id = "arthur_id", collection_name = "Arthur", attackDamages = 5, attackSpeed = 20, collection_prefab = "arthur_01", lifePoints = 500 });
-            dungeonWaves.Add(DJ_01_01.sceneName, DJ_01_01.enemyCrewMember);
+            DJ_01_01.enemyUnitCrewMember = new Dictionary<int, Unit>();
+            DJ_01_01.enemyUnitCrewMember.Add(1, new Unit { UnitID = "grey_viking_id", UnitName = "GreyViking", UnitPower = 5, UnitVelocity = 20, UnitPrefab = "grey_viking_01", UnitHp = 500 });
+            DJ_01_01.enemyUnitCrewMember.Add(2, new Unit { UnitID = "grey_viking_id", UnitName = "GreyViking", UnitPower = 5, UnitVelocity = 20, UnitPrefab = "grey_brother_viking_01", UnitHp = 500 });
+            DJ_01_01.enemyUnitCrewMember.Add(3, new Unit { UnitID = "green_viking_id", UnitName = "GreenViking", UnitPower = 5, UnitVelocity = 20, UnitPrefab = "green_viking_01", UnitHp = 500 });
+            DJ_01_01.enemyUnitCrewMember.Add(4, new Unit { UnitID = "blue_viking_id", UnitName = "BlueViking", UnitPower = 5, UnitVelocity = 20, UnitPrefab = "blue_viking_01", UnitHp = 500 });
+            DJ_01_01.enemyUnitCrewMember.Add(5, new Unit { UnitID = "purple_viking_id", UnitName = "PurpleViking", UnitPower = 5, UnitVelocity = 20, UnitPrefab = "purple_viking_01", UnitHp = 500 });
+            DJ_01_01.enemyUnitCrewMember.Add(6, new Unit { UnitID = "gold_viking_id", UnitName = "GoldViking", UnitPower = 5, UnitVelocity = 20, UnitPrefab = "gold_viking_01", UnitHp = 500 });
+            dungeonWaves.Add(DJ_01_01.sceneName, DJ_01_01.enemyUnitCrewMember);
             DJ_01_01.oldScenes = new List<string>();
             DJ_01_01.oldScenes.Add("HomePage"); // Seems to be accessible from HomePage
             this.dungeonMaps.Add(DJ_01_01);
 
             Scene DJ_01_02 = new Scene();
             DJ_01_02.sceneName = "DJ_01_02";
-            DJ_01_02.enemyCrewMember = new Dictionary<int, NeokyCollection>();
-            DJ_01_02.enemyCrewMember.Add(1, new NeokyCollection { collection_id = "sphere_id", collection_name = "Sphere", attackDamages = 5, attackSpeed = 20, collection_prefab = "sphere_prefab", lifePoints = 500 });
-            DJ_01_02.enemyCrewMember.Add(2, new NeokyCollection { collection_id = "sphere_id", collection_name = "Sphere", attackDamages = 5, attackSpeed = 20, collection_prefab = "sphere_prefab", lifePoints = 500 });
-            dungeonWaves.Add(DJ_01_02.sceneName, DJ_01_02.enemyCrewMember);
+            DJ_01_02.enemyUnitCrewMember = new Dictionary<int, Unit>();
+            DJ_01_02.enemyUnitCrewMember.Add(1, new Unit { UnitID = "grey_viking_id", UnitName = "GreyViking", UnitPower = 5, UnitVelocity = 20, UnitPrefab = "grey_viking_01", UnitHp = 500 });
+            DJ_01_02.enemyUnitCrewMember.Add(2, new Unit { UnitID = "grey_viking_id", UnitName = "GreyViking", UnitPower = 5, UnitVelocity = 20, UnitPrefab = "grey_viking_01", UnitHp = 500 });
+            dungeonWaves.Add(DJ_01_02.sceneName, DJ_01_02.enemyUnitCrewMember);
             DJ_01_02.oldScenes = new List<string>();
             DJ_01_02.oldScenes.Add("DJ_01_01"); // Seems Only Accessible from DJ_01_01
             this.dungeonMaps.Add(DJ_01_02);

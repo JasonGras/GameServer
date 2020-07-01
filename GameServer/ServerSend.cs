@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 
 using GameServer.Scenes;
+using GameServer.Units;
 
 namespace GameServer
 {
@@ -118,7 +119,7 @@ namespace GameServer
             }
         }
        
-        public static void SpawnEnemyAllCrew(int _toClient,int _enemyCount, Dictionary<int, NeokyCollection> _enemyCrew )
+        /*public static void SpawnEnemyAllCrew(int _toClient,int _enemyCount, Dictionary<int, NeokyCollection> _enemyCrew )
         {
             using (Packet _packet = new Packet((int)ServerPackets.spawnEnemyAllCrew))
             {
@@ -128,9 +129,34 @@ namespace GameServer
                
                 SendTCPData(_toClient, _packet);
             }
+        }*/
+
+        public static void SpawnEnemyAllUnitsCrew(int _toClient, int _enemyCount, Dictionary<int, Unit> _enemyCrew)
+        {
+            using (Packet _packet = new Packet((int)ServerPackets.spawnEnemyAllCrew))
+            {
+                _packet.Write(_toClient);
+                _packet.Write(_enemyCount);
+                _packet.Write(_enemyCrew);
+
+                SendTCPData(_toClient, _packet);
+            }
         }
 
-        public static void SendPlayerCollection(int _toClient, int _UnitsCount, int _UnitsStatCount, Dictionary<NeokyCollection, Dictionary<string, int>> _playerCollection)
+        /*public static void SendPlayerCollection(int _toClient, int _UnitsCount, int _UnitsStatCount, Dictionary<NeokyCollection, Dictionary<string, int>> _playerCollection)
+        {
+            using (Packet _packet = new Packet((int)ServerPackets.getAllPlayerUnits))
+            {
+                _packet.Write(_toClient);
+                _packet.Write(_UnitsCount);
+                _packet.Write(_UnitsStatCount);
+                _packet.Write(_playerCollection);
+
+                SendTCPData(_toClient, _packet);
+            }
+        }*/
+
+        public static void SendPlayerUnitCollection(int _toClient, int _UnitsCount, int _UnitsStatCount, Dictionary<Unit, Dictionary<string, int>> _playerCollection)
         {
             using (Packet _packet = new Packet((int)ServerPackets.getAllPlayerUnits))
             {
@@ -142,9 +168,21 @@ namespace GameServer
                 SendTCPData(_toClient, _packet);
             }
         }
-        
 
-        public static void SpawnPlayerAllCrew(int _toClient, int _crewCount, Dictionary<int, NeokyCollection> _playerCrew)
+
+        /*public static void SpawnPlayerAllCrew(int _toClient, int _crewCount, Dictionary<int, NeokyCollection> _playerCrew)
+        {
+            using (Packet _packet = new Packet((int)ServerPackets.spawnPlayerAllCrew))
+            {
+                _packet.Write(_toClient);
+                _packet.Write(_crewCount);
+                _packet.Write(_playerCrew);
+
+                SendTCPData(_toClient, _packet);
+            }
+        }*/
+
+        public static void SpawnPlayerAllUnitCrew(int _toClient, int _crewCount, Dictionary<int, Unit> _playerCrew)
         {
             using (Packet _packet = new Packet((int)ServerPackets.spawnPlayerAllCrew))
             {
