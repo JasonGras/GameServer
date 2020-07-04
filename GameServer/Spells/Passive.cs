@@ -12,6 +12,7 @@ namespace GameServer.Spells
         public string SpellID { get; set; }
         public string SpellName { get; set; }
         public float SpellRecastTime { get; set; }
+        public string SpellIMG { get; set; }
 
         /* SpellEffect */
         public float SpellAmount { get; set; }
@@ -21,10 +22,11 @@ namespace GameServer.Spells
         public SpellTargetZone spellTargetZone { get; set; }
         public SpellTargetProperty spellTargetProperty { get; set; }
 
-        public Passive(string _SpellID, string _SpellName, float _SpellRecastTime, float _SpellAmount, float _SpellEffectLast, SpellType _spellType, SpellTarget _spellTarget, SpellTargetZone _spellTargetZone, SpellTargetProperty _spellTargetProperty)
+        public Passive(string _SpellID, string _SpellName, string _SpellIMG, float _SpellRecastTime, float _SpellAmount, float _SpellEffectLast, SpellType _spellType, SpellTarget _spellTarget, SpellTargetZone _spellTargetZone, SpellTargetProperty _spellTargetProperty)
         {
             SpellID = _SpellID;
             SpellName = _SpellName;
+            SpellIMG = _SpellIMG;
             SpellRecastTime = _SpellRecastTime;
             SpellAmount = _SpellAmount;
             SpellEffectLast = _SpellEffectLast;
@@ -34,8 +36,9 @@ namespace GameServer.Spells
             spellTargetProperty = _spellTargetProperty;
         }
 
-        public void Play(Dictionary<int, Unit> _PlayerUnits, Dictionary<int, Unit> _EnemyUnits)
+        public Unit Play(Unit _FocusedUnits)
         {
+            return new Unit();
             //throw new NotImplementedException();
         }
     }

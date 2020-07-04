@@ -32,12 +32,12 @@ namespace GameServer.Dungeon.Dungeon_01
 
             DJ_01_01.sceneName = "DJ_01_01";
             DJ_01_01.enemyUnitCrewMember = new Dictionary<int, Unit>();
-            DJ_01_01.enemyUnitCrewMember.Add(1, new Unit { UnitID = "grey_viking_id", UnitName = "GreyViking", UnitPower = 5, UnitVelocity = 20, UnitPrefab = "grey_viking_01", UnitHp = 500 });
-            DJ_01_01.enemyUnitCrewMember.Add(2, new Unit { UnitID = "grey_viking_id", UnitName = "GreyViking", UnitPower = 5, UnitVelocity = 20, UnitPrefab = "grey_brother_viking_01", UnitHp = 500 });
-            DJ_01_01.enemyUnitCrewMember.Add(3, new Unit { UnitID = "green_viking_id", UnitName = "GreenViking", UnitPower = 5, UnitVelocity = 20, UnitPrefab = "green_viking_01", UnitHp = 500 });
-            DJ_01_01.enemyUnitCrewMember.Add(4, new Unit { UnitID = "blue_viking_id", UnitName = "BlueViking", UnitPower = 5, UnitVelocity = 20, UnitPrefab = "blue_viking_01", UnitHp = 500 });
-            DJ_01_01.enemyUnitCrewMember.Add(5, new Unit { UnitID = "purple_viking_id", UnitName = "PurpleViking", UnitPower = 5, UnitVelocity = 20, UnitPrefab = "purple_viking_01", UnitHp = 500 });
-            DJ_01_01.enemyUnitCrewMember.Add(6, new Unit { UnitID = "gold_viking_id", UnitName = "GoldViking", UnitPower = 5, UnitVelocity = 20, UnitPrefab = "gold_viking_01", UnitHp = 500 });
+            DJ_01_01.enemyUnitCrewMember.Add(1, new Unit { UnitID = "grey_viking_id" });
+            DJ_01_01.enemyUnitCrewMember.Add(2, new Unit { UnitID = "grey_brother_viking_id" });
+            DJ_01_01.enemyUnitCrewMember.Add(3, new Unit { UnitID = "green_viking_id" });
+            DJ_01_01.enemyUnitCrewMember.Add(4, new Unit { UnitID = "blue_viking_id" });
+            DJ_01_01.enemyUnitCrewMember.Add(5, new Unit { UnitID = "purple_viking_id" });
+            DJ_01_01.enemyUnitCrewMember.Add(6, new Unit { UnitID = "gold_viking_id" });
             dungeonWaves.Add(DJ_01_01.sceneName, DJ_01_01.enemyUnitCrewMember);
             DJ_01_01.oldScenes = new List<string>();
             DJ_01_01.oldScenes.Add("HomePage"); // Seems to be accessible from HomePage
@@ -46,8 +46,8 @@ namespace GameServer.Dungeon.Dungeon_01
             Scene DJ_01_02 = new Scene();
             DJ_01_02.sceneName = "DJ_01_02";
             DJ_01_02.enemyUnitCrewMember = new Dictionary<int, Unit>();
-            DJ_01_02.enemyUnitCrewMember.Add(1, new Unit { UnitID = "grey_viking_id", UnitName = "GreyViking", UnitPower = 5, UnitVelocity = 20, UnitPrefab = "grey_viking_01", UnitHp = 500 });
-            DJ_01_02.enemyUnitCrewMember.Add(2, new Unit { UnitID = "grey_viking_id", UnitName = "GreyViking", UnitPower = 5, UnitVelocity = 20, UnitPrefab = "grey_viking_01", UnitHp = 500 });
+            DJ_01_02.enemyUnitCrewMember.Add(1, new Unit { UnitID = "grey_viking_id" });
+            DJ_01_02.enemyUnitCrewMember.Add(2, new Unit { UnitID = "grey_viking_id" });
             dungeonWaves.Add(DJ_01_02.sceneName, DJ_01_02.enemyUnitCrewMember);
             DJ_01_02.oldScenes = new List<string>();
             DJ_01_02.oldScenes.Add("DJ_01_01"); // Seems Only Accessible from DJ_01_01

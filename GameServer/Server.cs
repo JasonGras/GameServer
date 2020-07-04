@@ -152,6 +152,8 @@ namespace GameServer
                 { (int)ClientPackets.FightPacket, ServerHandle.FightPacketReceieved },
                 { (int)ClientPackets.updateCollection, ServerHandle.PlayerAskCollection },
                 { (int)ClientPackets.attackPacket, ServerHandle.AttackPacketReceieved },
+                { (int)ClientPackets.attackSpellPacket, ServerHandle.AttackSpellPacketReceieved },
+                { (int)ClientPackets.TurnOverPacket, ServerHandle.TurnOverPacketRecieved },
                 { (int)ClientPackets.openCoin, ServerHandle.GetRandomLoot },
                 //{ (int)ClientPackets.playerMovement, ServerHandle.PlayerMovement },
             };

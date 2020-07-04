@@ -17,7 +17,7 @@ namespace GameServer.Units.Viking
             this.UnitHp = UnitMaxHp;
             this.UnitLevel = 1;
             this.UnitID = "gold_viking_id";
-            this.UnitVelocity = 420;
+            this.UnitVelocity = 390;
             this.UnitImage = "gold_viking_img";
             this.UnitPrefab = "gold_viking_01";
             this.UnitTribe = "Viking";
@@ -26,6 +26,7 @@ namespace GameServer.Units.Viking
             BasicAttack UnitBasicAttack = new BasicAttack(
                "gold_viking_basic_attack_id",
                "gold_viking_basic_attack_name",
+               "gold_viking_basic_attack_img",
                1,
                UnitPower,
                1,
@@ -37,6 +38,7 @@ namespace GameServer.Units.Viking
             BasicAttack UnitMegaAttack = new BasicAttack(
                "gold_viking_mega_attack_id",
                "gold_viking_mega_attack_name",
+               "gold_viking_mega_attack_img",
                1,
                UnitPower*2,
                1,
@@ -48,6 +50,7 @@ namespace GameServer.Units.Viking
             Passive UnitPassive = new Passive(
                "gold_viking_passive_id",
                "gold_viking_passive_name",
+               "gold_viking_passive_img",
                1,
                0.2f,
                1,
@@ -59,6 +62,7 @@ namespace GameServer.Units.Viking
             Heal UnitHeal = new Heal(
                "gold_viking_heal_id",
                "gold_viking_heal_name",
+               "gold_viking_heal_img",
                1,
                UnitPower,
                1,

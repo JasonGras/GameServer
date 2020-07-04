@@ -201,6 +201,29 @@ namespace GameServer
             }
         }
 
+        public static void AttackSpellPacketReceieved(int _fromClient, Packet _packet)
+        {
+            try
+            {
+                // Getting the parameter from Client Packet
+                int _clientIdCheck = _packet.ReadInt();
+                UserSession _currentUserSession = _packet.ReadUserSession();
+                string _PlayerSpellID = _packet.ReadString();
+                int _TargetUnitNumber = _packet.ReadInt();
+                int _PlayingUnitNumber = _packet.ReadInt();
+
+
+                if (_fromClient == _clientIdCheck)
+                {
+                    Server.clients[_fromClient].PlayerUnitSpellAttack(_currentUserSession, _PlayerSpellID, _TargetUnitNumber, _PlayingUnitNumber);
+                }
+            }
+            catch (Exception e)
+            {
+                NlogClass.target.WriteAsyncLogEvent(new AsyncLogEventInfo(new LogEventInfo(LogLevel.Error, "AttackSpellPacketReceieved", "Client Username : "+ Server.clients[_fromClient].myUser.Username + " | Read the Packet failed | Exception : " + e ) , NlogClass.exceptions.Add));
+            }
+        }
+
         public static void AttackPacketReceieved(int _fromClient, Packet _packet)
         {
             try
@@ -220,6 +243,28 @@ namespace GameServer
             catch (Exception e)
             {
                 NlogClass.target.WriteAsyncLogEvent(new AsyncLogEventInfo(new LogEventInfo(LogLevel.Error, "AttackPacketReceieved", "Client Username : "+ Server.clients[_fromClient].myUser.Username + " | Read the Packet failed | Exception : " + e ) , NlogClass.exceptions.Add));
+            }
+        }
+
+        public static void TurnOverPacketRecieved(int _fromClient, Packet _packet)
+        {
+            try
+            {
+                // Getting the parameter from Client Packet
+                int _clientIdCheck = _packet.ReadInt();
+                UserSession _currentUserSession = _packet.ReadUserSession();
+                string _TurnOverLabel = _packet.ReadString();
+                int EndingUnitIDTurn = _packet.ReadInt();
+
+
+                if (_fromClient == _clientIdCheck)
+                {
+                    Server.clients[_fromClient].UpdateTurnMeter(_currentUserSession, _TurnOverLabel, EndingUnitIDTurn);
+                }
+            }
+            catch (Exception e)
+            {
+                NlogClass.target.WriteAsyncLogEvent(new AsyncLogEventInfo(new LogEventInfo(LogLevel.Error, "AttackPacketReceieved", "Client Username : " + Server.clients[_fromClient].myUser.Username + " | Read the Packet failed | Exception : " + e), NlogClass.exceptions.Add));
             }
         }
 

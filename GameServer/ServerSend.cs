@@ -4,6 +4,7 @@ using System.Text;
 
 using GameServer.Scenes;
 using GameServer.Units;
+using static GameServer.Spells.ISpellEffect;
 
 namespace GameServer
 {
@@ -201,6 +202,44 @@ namespace GameServer
                 _packet.Write(_toClient);
                 _packet.Write(_UnitPlayer);
                 _packet.Write(_EnemyPlayer);
+
+                SendTCPData(_toClient, _packet);
+            }
+        }
+
+        public static void NewPlayerUnitTurn(int _toClient, int _NewUnitIDTurn)
+        {
+            using (Packet _packet = new Packet((int)ServerPackets.newPlayerUnitTurn))
+            {
+                _packet.Write(_toClient);
+                _packet.Write(_NewUnitIDTurn);
+
+                SendTCPData(_toClient, _packet);
+            }
+        }
+
+        public static void AttackPlayersUnits(int _toClient, int _IAAttackingUnit, int _TargetUnit, SpellTarget _TargetPlayerOrIA, string _SpellID)
+        {
+            using (Packet _packet = new Packet((int)ServerPackets.IAAttackPacket))
+            {
+                _packet.Write(_toClient);
+                _packet.Write(_IAAttackingUnit);
+                _packet.Write(_TargetUnit);
+                _packet.Write((int)_TargetPlayerOrIA);
+                _packet.Write(_SpellID);
+
+                SendTCPData(_toClient, _packet);
+            }
+        }
+        public static void AttackIAUnits(int _toClient, int _IAAttackingUnit, int _TargetUnit, SpellTarget _TargetPlayerOrIA, string _SpellID)
+        {
+            using (Packet _packet = new Packet((int)ServerPackets.PlayerAttackPacket))
+            {
+                _packet.Write(_toClient);
+                _packet.Write(_IAAttackingUnit);
+                _packet.Write(_TargetUnit);
+                _packet.Write((int)_TargetPlayerOrIA);
+                _packet.Write(_SpellID);
 
                 SendTCPData(_toClient, _packet);
             }

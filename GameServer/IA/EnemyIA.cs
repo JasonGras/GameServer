@@ -8,14 +8,17 @@ namespace GameServer.IA
 {
     public class EnemyIA
     {
-        public Dictionary<int, Unit> _playerCollection;
-        public Dictionary<int, Unit> _enemyCollection;
+        public Dictionary<int, Unit> _ASide;
+        public Dictionary<int, Unit> _BSide;
+        public Unit _CurrentSide;
 
-        public Unit CurrentEnemyUnit;
+        public Unit CurrentIAUnit;
+
         public int PlayingUnitID;
+        public int IATargetUnitID;
 
-        public int BestPlayerUnitTarget = 1; // = The ID of The Weakest Player Unit to Focus Attack | Start to 1 coz ID of Units begins to 1
-        public int BestEnemyUnitTarget = 1; // = The ID of The Weakest IA Unit Needing Help | Start to 1 coz ID of Units begins to 1
+        public int BestASideUnitTarget = 1; // = The ID of The Weakest Player Unit to Focus Attack | Start to 1 coz ID of Units begins to 1
+        public int BestBSideUnitTarget = 1; // = The ID of The Weakest IA Unit Needing Help | Start to 1 coz ID of Units begins to 1
 
         public Queue<ISpellEffect.SpellType> spellTypeQueue;
 
@@ -23,14 +26,84 @@ namespace GameServer.IA
 
         public EnemyIA(Dictionary<int, Unit>  PlayerCollection, Dictionary<int, Unit>  EnemyCollection,int _PlayingUnitID)
         {
-            _playerCollection = PlayerCollection;
-            _enemyCollection = EnemyCollection;
+            _ASide = PlayerCollection;
+            _BSide = EnemyCollection;
             PlayingUnitID = _PlayingUnitID;
-            CurrentEnemyUnit = _enemyCollection[_PlayingUnitID];
+            CurrentIAUnit = _BSide[_PlayingUnitID];
         }
+
+        public void UseSpell(List<int> _UnitsTargeted)
+        {
+            
+            switch (BestSpell.spellTarget)
+            {
+                
+                case ISpellEffect.SpellTarget.ENEMY:
+                    foreach (var ASideUnits in _UnitsTargeted)
+                    {
+                        if (_ASide.ContainsKey(ASideUnits))
+                        {                            
+                            _ASide.TryGetValue(ASideUnits, out _CurrentSide);
+
+                            _ASide[ASideUnits] = BestSpell.Play(_CurrentSide);
+                        }
+                    }
+                    break;
+                case ISpellEffect.SpellTarget.ALLY:
+                case ISpellEffect.SpellTarget.SELF:
+                default:
+                    foreach (var BsideUnits in _UnitsTargeted)
+                    {
+                        if (_BSide.ContainsKey(BsideUnits))
+                        {
+                            _BSide.TryGetValue(BsideUnits, out _CurrentSide);
+
+                            _BSide[BsideUnits] = BestSpell.Play(_CurrentSide);                            
+                        }
+                    }
+                    break;
+            }
+        }
+
+        /*switch (BestSpell.spellType)
+                            {
+                                case ISpellEffect.SpellType.DEFENSE:
+                                    switch (BestSpell.spellTargetProperty)
+                                    {
+                                        case ISpellEffect.SpellTargetProperty.UNIT_HP:
+                                            _CurrentSide.UnitHp
+                                            break;
+                                        case ISpellEffect.SpellTargetProperty.UNIT_MANA:
+                                            break;
+                                        case ISpellEffect.SpellTargetProperty.UNIT_SHIELD:
+                                            break;
+                                        case ISpellEffect.SpellTargetProperty.UNIT_DAMAGES:
+                                            break;
+                                        case ISpellEffect.SpellTargetProperty.UNIT_VELOCITY:
+                                            break;
+                                        default:
+                                            break;
+                                    }
+                                    break;
+                                case ISpellEffect.SpellType.OFFENSE:
+                                    break;
+                                case ISpellEffect.SpellType.BUFF:
+                                    break;
+                                case ISpellEffect.SpellType.DEBUFF:
+                                    break;
+                                case ISpellEffect.SpellType.INCREMENTAL:
+                                    break;
+                                case ISpellEffect.SpellType.PASSIVE:
+                                    break;
+                                default:
+                                    break;
+                            }*/
 
         public void CheckUnitSpells(List<ISpell> _UnitSpells)
         {
+
+            bool isSpellFound = false;
+
             // Priorise Spell
             spellTypeQueue = new Queue<ISpellEffect.SpellType>();
             spellTypeQueue.Enqueue(ISpellEffect.SpellType.DEFENSE);
@@ -40,26 +113,30 @@ namespace GameServer.IA
             // Find Best Spell       
             foreach (var SpellType in spellTypeQueue)
             {
-                ISpell NewSpell = FindSpellType(_UnitSpells, SpellType); // Null if no spell Found
-                if (NewSpell != null)
+                List<ISpell> NewSpell = FindSpellType(_UnitSpells, SpellType); // Null if no spell Found 
+                if (NewSpell.Count != 0 && !isSpellFound) // 
                 {
-                    if(BestSpell != null)
+                    foreach (var Spell in NewSpell)
                     {
-                         var NewSpellTotalPower = NewSpell.SpellEffectLast * NewSpell.SpellAmount;
-                         var BestSpellTotalPower = BestSpell.SpellEffectLast * BestSpell.SpellAmount;
-
-                        if(NewSpellTotalPower > BestSpellTotalPower)
+                        if (BestSpell != null)
                         {
-                            BestSpell = NewSpell;
+                            var NewSpellTotalPower = Spell.SpellEffectLast * Spell.SpellAmount;
+                            var BestSpellTotalPower = BestSpell.SpellEffectLast * BestSpell.SpellAmount;
+
+                            if (NewSpellTotalPower > BestSpellTotalPower)
+                            {
+                                BestSpell = Spell;
+                            }
+                            
+                        }
+                        else
+                        {
+                            BestSpell = Spell;
                         }
                     }
-                    else
-                    {
-                        BestSpell = NewSpell;
-                    }        
-                }
+                    isSpellFound = true;
+                }                
             }
-
         }
 
         public int FindUnitTarget()
@@ -67,33 +144,35 @@ namespace GameServer.IA
             switch (BestSpell.spellTarget)
             {
                 case ISpellEffect.SpellTarget.ALLY:
-                    return BestPlayerUnitTarget;
+                    return BestBSideUnitTarget;
                 case ISpellEffect.SpellTarget.ENEMY:
-                    return BestEnemyUnitTarget;
+                    return BestASideUnitTarget;
                 case ISpellEffect.SpellTarget.SELF:
                 default:
                     return PlayingUnitID;                    
             }
         }
 
-        public List<int> FindUnitTargetZone(int Target)
+        public List<int> FindUnitTargetZone(int Target, ISpellEffect.SpellTarget _spellTarget)
         {
-            List<int> UnitTargetZone = new List<int>();
+            IATargetUnitID = Target;
+            List<int> UnitTargetZone = new List<int>();            
+
             switch (BestSpell.spellTargetZone)
             {                
                 case ISpellEffect.SpellTargetZone.ALL_UNITS:
-                    switch (BestSpell.spellTarget)
+                    switch (_spellTarget)
                     {
                         case ISpellEffect.SpellTarget.ALLY:
-                            for (int i = 1; i <= _enemyCollection.Count; i++)
+                            foreach (var BSideUnit in _BSide)
                             {
-                                UnitTargetZone.Add(i);
+                                UnitTargetZone.Add(BSideUnit.Key);
                             }
                             return UnitTargetZone;
                         case ISpellEffect.SpellTarget.ENEMY:
-                            for (int i = 1; i <= _playerCollection.Count; i++)
+                            foreach (var ASideUnit in _ASide)
                             {
-                                UnitTargetZone.Add(i);
+                                UnitTargetZone.Add(ASideUnit.Key);
                             }
                             return UnitTargetZone;
                         case ISpellEffect.SpellTarget.SELF:
@@ -102,26 +181,263 @@ namespace GameServer.IA
                              return UnitTargetZone;
                     }
                 case ISpellEffect.SpellTargetZone.LINE_UNITS:
-                    if(Target <= 3)
-                    {
-                        UnitTargetZone.Add(1);
-                        UnitTargetZone.Add(2);
-                        UnitTargetZone.Add(3);
-                    }
-                    else
-                    {
-                        UnitTargetZone.Add(4);
-                        UnitTargetZone.Add(5);
-                        UnitTargetZone.Add(6);
-                    }                
-                    return UnitTargetZone;
+                    switch (_spellTarget)
+                    {                        
+                        case ISpellEffect.SpellTarget.ENEMY:
+                            if (Target <= 3) // From B Side Enemy it's a BACK Lane
+                            {
+                                foreach (var ASideUnit in _ASide)
+                                {
+                                    if (ASideUnit.Key <= 3)
+                                    {
+                                        UnitTargetZone.Add(ASideUnit.Key);
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                foreach (var ASideUnit in _ASide)
+                                {
+                                    if (ASideUnit.Key > 3)
+                                    {
+                                        UnitTargetZone.Add(ASideUnit.Key);
+                                    }
+                                }
+                            }
+                            return UnitTargetZone;
+
+                        case ISpellEffect.SpellTarget.ALLY:
+                        case ISpellEffect.SpellTarget.SELF:
+                        default:                        
+                            if (Target <= 3) // From B Side Ally it's a FRONT Lane
+                            {
+                                foreach (var BSideUnit in _BSide)
+                                {
+                                    if (BSideUnit.Key <= 3)
+                                    {
+                                        UnitTargetZone.Add(BSideUnit.Key);
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                foreach (var BSideUnit in _BSide)
+                                {
+                                    if (BSideUnit.Key > 3)
+                                    {
+                                        UnitTargetZone.Add(BSideUnit.Key);
+                                    }
+                                }
+                            }
+                            return UnitTargetZone;
+                    }              
                 case ISpellEffect.SpellTargetZone.COLUMN_UNITS:
-                    break;
+                    switch (_spellTarget)
+                    {
+                       
+                        case ISpellEffect.SpellTarget.ENEMY:
+                            
+                            if (Target == 1 || Target == 4)
+                            {
+                                foreach (var ASideUnit in _ASide)
+                                {
+                                    if (ASideUnit.Key == 1 || ASideUnit.Key == 4)
+                                    {
+                                        UnitTargetZone.Add(ASideUnit.Key);
+                                    }
+                                }
+                            }
+                            if (Target == 2 || Target == 5)
+                            {
+                                foreach (var ASideUnit in _ASide)
+                                {
+                                    if (ASideUnit.Key == 2 || ASideUnit.Key == 5)
+                                    {
+                                        UnitTargetZone.Add(ASideUnit.Key);
+                                    }
+                                }
+                            }
+                            if (Target == 3 || Target == 6)
+                            {
+                                foreach (var ASideUnit in _ASide)
+                                {
+                                    if (ASideUnit.Key == 3 || ASideUnit.Key == 6)
+                                    {
+                                        UnitTargetZone.Add(ASideUnit.Key);
+                                    }
+                                }
+                            }
+                            return UnitTargetZone;
+
+                        case ISpellEffect.SpellTarget.ALLY:
+                        case ISpellEffect.SpellTarget.SELF:
+                        default:
+                            if (Target == 1 || Target == 4)
+                            {
+                                foreach (var BSideUnit in _BSide)
+                                {
+                                    if (BSideUnit.Key == 1 || BSideUnit.Key == 4)
+                                    {
+                                        UnitTargetZone.Add(BSideUnit.Key);
+                                    }
+                                }
+                            }
+                            if (Target == 2 || Target == 5)
+                            {
+                                foreach (var BSideUnit in _BSide)
+                                {
+                                    if (BSideUnit.Key == 2 || BSideUnit.Key == 5)
+                                    {
+                                        UnitTargetZone.Add(BSideUnit.Key);
+                                    }
+                                }
+                            }
+                            if (Target == 3 || Target == 6)
+                            {
+                                foreach (var BSideUnit in _BSide)
+                                {
+                                    if (BSideUnit.Key == 3 || BSideUnit.Key == 6)
+                                    {
+                                        UnitTargetZone.Add(BSideUnit.Key);
+                                    }
+                                }
+                            }
+                            return UnitTargetZone;
+                    }
                 case ISpellEffect.SpellTargetZone.ZONE_UNITS:
-                    break;
+                    switch (_spellTarget)
+                    {                        
+                        case ISpellEffect.SpellTarget.ENEMY:
+                            if (Target == 1)
+                            {
+                                foreach (var ASideUnit in _ASide)
+                                {
+                                    if (ASideUnit.Key == 1 || ASideUnit.Key == 2 || ASideUnit.Key == 4)
+                                    {
+                                        UnitTargetZone.Add(ASideUnit.Key);
+                                    }
+                                }
+                            }
+                            if (Target == 2)
+                            {
+                                foreach (var ASideUnit in _ASide)
+                                {
+                                    if (ASideUnit.Key == 1 || ASideUnit.Key == 2 || ASideUnit.Key == 3 || ASideUnit.Key == 5)
+                                    {
+                                        UnitTargetZone.Add(ASideUnit.Key);
+                                    }
+                                }
+                            }
+                            if (Target == 3)
+                            {
+                                foreach (var ASideUnit in _ASide)
+                                {
+                                    if (ASideUnit.Key == 3 || ASideUnit.Key == 2 || ASideUnit.Key == 6)
+                                    {
+                                        UnitTargetZone.Add(ASideUnit.Key);
+                                    }
+                                }
+                            }
+                            if (Target == 4)
+                            {
+                                foreach (var ASideUnit in _ASide)
+                                {
+                                    if (ASideUnit.Key == 4 || ASideUnit.Key == 1 || ASideUnit.Key == 5)
+                                    {
+                                        UnitTargetZone.Add(ASideUnit.Key);
+                                    }
+                                }
+                            }
+                            if (Target == 5)
+                            {
+                                foreach (var ASideUnit in _ASide)
+                                {
+                                    if (ASideUnit.Key == 5 || ASideUnit.Key == 2 || ASideUnit.Key == 4 || ASideUnit.Key == 6)
+                                    {
+                                        UnitTargetZone.Add(ASideUnit.Key);
+                                    }
+                                }
+                            }
+                            if (Target == 6)
+                            {
+                                foreach (var ASideUnit in _ASide)
+                                {
+                                    if (ASideUnit.Key == 6 || ASideUnit.Key == 3 || ASideUnit.Key == 5)
+                                    {
+                                        UnitTargetZone.Add(ASideUnit.Key);
+                                    }
+                                }
+                            }
+                            return UnitTargetZone;
+                        
+                        case ISpellEffect.SpellTarget.ALLY:
+                        case ISpellEffect.SpellTarget.SELF:
+                        default:
+                            if (Target == 1)
+                            {
+                                foreach (var BSideUnit in _BSide)
+                                {
+                                    if (BSideUnit.Key == 1 || BSideUnit.Key == 2 || BSideUnit.Key == 4)
+                                    {
+                                        UnitTargetZone.Add(BSideUnit.Key);
+                                    }
+                                }
+                            }
+                            if (Target == 2)
+                            {
+                                foreach (var BSideUnit in _BSide)
+                                {
+                                    if (BSideUnit.Key == 1 || BSideUnit.Key == 2 || BSideUnit.Key == 3 || BSideUnit.Key == 5)
+                                    {
+                                        UnitTargetZone.Add(BSideUnit.Key);
+                                    }
+                                }
+                            }
+                            if (Target == 3)
+                            {
+                                foreach (var BSideUnit in _BSide)
+                                {
+                                    if (BSideUnit.Key == 3 || BSideUnit.Key == 2 || BSideUnit.Key == 6)
+                                    {
+                                        UnitTargetZone.Add(BSideUnit.Key);
+                                    }
+                                }
+                            }
+                            if (Target == 4)
+                            {
+                                foreach (var BSideUnit in _BSide)
+                                {
+                                    if (BSideUnit.Key == 4 || BSideUnit.Key == 1 || BSideUnit.Key == 5)
+                                    {
+                                        UnitTargetZone.Add(BSideUnit.Key);
+                                    }
+                                }
+                            }
+                            if (Target == 5)
+                            {
+                                foreach (var BSideUnit in _BSide)
+                                {
+                                    if (BSideUnit.Key == 5 || BSideUnit.Key == 2 || BSideUnit.Key == 4 || BSideUnit.Key == 6)
+                                    {
+                                        UnitTargetZone.Add(BSideUnit.Key);
+                                    }
+                                }
+                            }
+                            if (Target == 6)
+                            {
+                                foreach (var BSideUnit in _BSide)
+                                {
+                                    if (BSideUnit.Key == 6 || BSideUnit.Key == 3 || BSideUnit.Key == 5)
+                                    {
+                                        UnitTargetZone.Add(BSideUnit.Key);
+                                    }
+                                }
+                            }
+                            return UnitTargetZone;
+                    }
                 case ISpellEffect.SpellTargetZone.ONE_UNIT:                    
                 default:
-                    UnitTargetZone.Add(BestEnemyUnitTarget);
+                    UnitTargetZone.Add(FindUnitTarget());
                     return UnitTargetZone;
             }
         }
@@ -129,19 +445,19 @@ namespace GameServer.IA
         public void UnitsAnalyse()
         {            
             // Find The Best Target ? // Lowest HP target
-            foreach (var PlayerUnit in _playerCollection)
+            foreach (var PlayerUnit in _ASide)
             {
-                if(PlayerUnit.Value.UnitHp <= _playerCollection[BestPlayerUnitTarget].UnitHp)
+                if(PlayerUnit.Value.UnitHp <= _ASide[BestASideUnitTarget].UnitHp)
                 {
-                    BestPlayerUnitTarget = PlayerUnit.Key;
+                    BestASideUnitTarget = PlayerUnit.Key;
                 }
             }
 
-            foreach (var EnemyUnit in _enemyCollection)
+            foreach (var EnemyUnit in _BSide)
             {
-                if (EnemyUnit.Value.UnitHp <= _enemyCollection[BestEnemyUnitTarget].UnitHp)
+                if (EnemyUnit.Value.UnitHp <= _BSide[BestBSideUnitTarget].UnitHp)
                 {
-                    BestEnemyUnitTarget = EnemyUnit.Key;
+                    BestBSideUnitTarget = EnemyUnit.Key;
                 }
             }
 
@@ -168,12 +484,13 @@ namespace GameServer.IA
 
         private float GetHealAmount()
         {
-            return _playerCollection[PlayingUnitID].UnitPower; // Heal Amount should be calculated Form Spell
+            return _ASide[PlayingUnitID].UnitPower; // Heal Amount should be calculated Form Spell
         }
 
-        private ISpell FindSpellType(List<ISpell> SpellList, ISpellEffect.SpellType _spellType)
+        private List<ISpell> FindSpellType(List<ISpell> SpellList, ISpellEffect.SpellType _spellType)
         {
-            ISpell result = SpellList.Find(
+
+            List<ISpell> result = SpellList.FindAll(
                 delegate (ISpell sp)
                 {
                     return sp.spellType == _spellType;
@@ -182,9 +499,6 @@ namespace GameServer.IA
 
             return result;
 
-        }
-
-        
-
-    }    
+        }       
+    }
 }

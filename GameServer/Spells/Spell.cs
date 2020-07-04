@@ -10,9 +10,10 @@ namespace GameServer.Spells
     {
         public string SpellID { get; set; }
         public string SpellName { get; set; }
+        public string SpellIMG { get; set; }
         public float SpellRecastTime { get; set; } // 1 = Every Turn | 5 = Every 5 turns    
 
-        void Play(Dictionary<int, Unit> _PlayerUnits, Dictionary<int, Unit> _EnemyUnits);        
+        Unit Play(Unit _FocusedUnits);        
         
         //public List<ISpellEffect> spellEffects { get; set; }
 

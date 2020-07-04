@@ -1,10 +1,11 @@
 ﻿using Amazon.Extensions.CognitoAuthentication;
+using GameServer.Spells;
 using GameServer.Units;
 using System;
 using System.Collections.Generic;
 using System.Numerics;
 using System.Text;
-
+using static GameServer.Spells.ISpellEffect;
 
 namespace GameServer
 {
@@ -22,7 +23,10 @@ namespace GameServer
         spawnEnemyAllCrew,
         spawnPlayerAllCrew,
         getAllPlayerUnits,
-        callbackAttackPacket
+        callbackAttackPacket,
+        IAAttackPacket,
+        newPlayerUnitTurn,
+        PlayerAttackPacket
 
         /*
         playerPosition,
@@ -46,6 +50,8 @@ namespace GameServer
         updateCollection,
         unitAttack,
         attackPacket,
+        attackSpellPacket,
+        TurnOverPacket,
         openCoin,
         //playerMovement,
     }
@@ -207,6 +213,25 @@ namespace GameServer
             Write(_value.Id_Token);
             Write(_value.Refresh_Token);
         }
+
+        /// <summary>Adds a Vector3 to the packet.</summary>
+        /// <param name="_value">The Vector3 to add.</param>
+        public void Write(List<ISpell> _value)
+        {
+            foreach (var Spell in _value)
+            {
+                Write(Spell.SpellID);
+                Write(Spell.SpellName);
+                Write(Spell.SpellIMG);
+                Write(Spell.SpellRecastTime);
+                Write(Spell.SpellAmount);
+                Write(Spell.SpellEffectLast);
+                Write((int) Spell.spellTarget);
+                Write((int) Spell.spellTargetProperty);
+                Write((int) Spell.spellTargetZone);
+                Write((int) Spell.spellType);
+            }
+        }
         /// <summary>Adds a Dictionary<int, NeokyCollection> to the packet.</summary>
         /// <param name="_value">The Vector3 to add.</param>
         /*public void Write(Dictionary<int, NeokyCollection> _value)
@@ -240,6 +265,8 @@ namespace GameServer
             Write(_value.UnitHp);
             Write(_value.turnMeter);
             Write(_value.UnitQuality);
+            Write(_value.spellList.Count);
+            Write(_value.spellList);
             Write(_value.UnitTribe);
         }
 

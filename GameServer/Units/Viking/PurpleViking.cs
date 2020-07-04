@@ -17,7 +17,7 @@ namespace GameServer.Units.Viking
             this.UnitHp = UnitMaxHp;
             this.UnitLevel = 1;
             this.UnitID = "purple_viking_id";
-            this.UnitVelocity = 415;
+            this.UnitVelocity = 300;
             this.UnitImage = "purple_viking_img";
             this.UnitPrefab = "purple_viking_01";
             this.UnitTribe = "Viking";
@@ -26,6 +26,7 @@ namespace GameServer.Units.Viking
             BasicAttack UnitBasicAttack = new BasicAttack(
                "purple_viking_basic_attack_id",
                "purple_viking_basic_attack_name",
+               "purple_viking_basic_attack_img",
                1,
                UnitPower,
                1,
@@ -37,6 +38,7 @@ namespace GameServer.Units.Viking
             Passive UnitPassive = new Passive(
                "purple_viking_passive_id",
                "purple_viking_passive_name",
+               "purple_viking_passive_img",
                1,
                0.2f,
                1,
@@ -48,6 +50,7 @@ namespace GameServer.Units.Viking
             Heal UnitHeal = new Heal(
                "purple_viking_heal_id",
                "purple_viking_heal_name",
+               "purple_viking_heal_img",
                1,
                UnitPower,
                1,

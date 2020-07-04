@@ -534,6 +534,18 @@ namespace GameServer
             player.UnitPlayerAttack(id,_unitPosition,_unitTarget);
         }
 
+        public void PlayerUnitSpellAttack(UserSession _currentUserSession, string _SpellID, int _unitTarget, int _PlayingUnitNumber)
+        {
+            OnSessionExpiredRenewTokens(_currentUserSession);
+            player.UnitPlayerSpellAttack(id, _SpellID, _unitTarget, _PlayingUnitNumber);
+        }
+
+        public void UpdateTurnMeter(UserSession _currentUserSession, string _TurnMeterLabel, int EndingUnitIDTurn)
+        {
+            OnSessionExpiredRenewTokens(_currentUserSession);
+            player.UpdateTurnMeterStatus(id, _TurnMeterLabel, EndingUnitIDTurn);
+        }
+
         public async void SignInToCognito(string _username, string _password)
         {
             

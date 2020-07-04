@@ -61,7 +61,7 @@ namespace GameServer
 
         public bool isInGame = false;
 
-        public enum BattleState { INIT_FIGHT, PLAYER_TURN, ENEMY_TURN, WON, LOST }
+        //public enum BattleState { INIT_FIGHT, PLAYER_TURN, ENEMY_TURN, WON, LOST }
 
         public BattleState currentBattleState;
 
@@ -217,13 +217,29 @@ namespace GameServer
         /// UPDATED 13/06/2020
         public void SetFight(int _clientId)
         {
-            FightManager = new NewFight();
+            FightManager = new NewFight(_clientId);
             isInGame = true;
 
             FightManager.InstantiateEnemyUnitsCrew(_clientId, currentScene);
             FightManager.InstantiatePlayerUnitsCrew(_clientId, PlayerCrew);    
             
         }       
+
+        public void UnitPlayerSpellAttack(int _clientId, string _SpellID, int _unitTarget, int _PlayingUnitNumber)
+        {
+            if (isInGame)
+            {
+                FightManager.PlayerRequestUsingSpell(_SpellID,_unitTarget, _PlayingUnitNumber);
+            }
+        }
+
+        public void UpdateTurnMeterStatus(int _clientId, string TurnMeterLbl, int EndingUnitIDTurn)
+        {
+            if (isInGame)
+            {
+                FightManager.isTurnOverPacketRecieved(TurnMeterLbl, EndingUnitIDTurn);            
+            }
+        }
 
         public void UnitPlayerAttack(int _clientId, int _unitPosition, int _unitTarget)
         {                    
@@ -266,7 +282,7 @@ namespace GameServer
                                 }
                                 else
                                 {
-                                    currentBattleState = BattleState.ENEMY_TURN;
+                                    currentBattleState = BattleState.IA_TURN;
                                     // EndPlayerTurn
                                 }
 
